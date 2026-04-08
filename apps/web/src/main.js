@@ -1,0 +1,11 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Layout } from "./components/Layout";
+import { OverviewPage } from "./pages/OverviewPage";
+import { IssuerPage } from "./pages/IssuerPage";
+import { WalletPage } from "./pages/WalletPage";
+import { VerifierPage } from "./pages/VerifierPage";
+import { ProtectedPage } from "./pages/ProtectedPage";
+ReactDOM.createRoot(document.getElementById("root")).render(_jsx(React.StrictMode, { children: _jsx(BrowserRouter, { children: _jsx(Routes, { children: _jsxs(Route, { path: "/", element: _jsx(Layout, {}), children: [_jsx(Route, { index: true, element: _jsx(OverviewPage, {}) }), _jsx(Route, { path: "issuer", element: _jsx(IssuerPage, {}) }), _jsx(Route, { path: "wallet", element: _jsx(WalletPage, {}) }), _jsx(Route, { path: "verifier", element: _jsx(VerifierPage, {}) }), _jsx(Route, { path: "admin", element: _jsx(ProtectedPage, { title: "Admin Console", endpoint: "/api/admin/data" }) }), _jsx(Route, { path: "audit", element: _jsx(ProtectedPage, { title: "Audit Console", endpoint: "/api/audit/data" }) }), _jsx(Route, { path: "dev", element: _jsx(ProtectedPage, { title: "Developer Console", endpoint: "/api/dev/data" }) })] }) }) }) }));
