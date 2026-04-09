@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test -ws",
+    "test": "npm run test --workspaces",
     "dev": "npm-run-all --parallel dev:*",
     "dev:api": "npm --workspace @did-vc-rbac/api run dev",
     "dev:web": "npm --workspace @did-vc-rbac/web run dev",

@@ -1,56 +1,126 @@
-﻿# DID 湲곕컲 愿由ъ옄 肄섏넄 濡쒓렇??+ VC 湲곕컲 RBAC MVP
+# DID-Based Admin Console Login + VC-Based RBAC MVP
 
-蹂댁븞 ?ы듃?대━???쒖텧??濡쒖뺄 MVP?? 鍮꾨?踰덊샇 濡쒓렇?????DID/VC瑜??ъ슜?섍퀬, VC ?덉쓽 role/permissions濡?愿由ъ옄 肄섏넄 RBAC瑜??섑뻾?쒕떎.
+Local portfolio MVP that replaces password-based admin login with DID/VC authentication and uses VC claims (`role`, `permissions[]`) for RBAC.
 
-## ?꾨줈?앺듃 媛쒖슂
-- ?섎굹???뱀빋 ?덉뿉 Issuer / Wallet / Verifier / Audit UI ?쒓났
-- ?섎굹??backend?먯꽌 issuer, wallet, verifier, audit 紐⑤뱢 遺꾨━
-- shared package??DID/JOSE/VC 寃利?濡쒖쭅 怨듯넻??- SQLite 湲곕컲 ?곹깭 ???- did:jwk + vc+jwt / vp+jwt ?ъ슜
+## Project Overview
+- Single **React web app** with pages for **Issuer / Wallet / Verifier / Audit / Protected Consoles**
+- Single **Express backend** with separated issuer, wallet, verifier, and audit modules
+- Shared **TypeScript package** for DID/JOSE/RBAC/schema/validation logic
+- **SQLite** for local persistence
+- **did:jwk** as the default DID method
+- **vc+jwt / vp+jwt** for low-friction local implementation
 
-## ??DID/VC瑜??쇰뒗吏
-- 愿由ъ옄 怨꾩젙???뺤쟻 鍮꾨?踰덊샇/怨듭쑀 鍮꾨? ?섏〈?깆쓣 以꾩씠怨? ?쒕챸 媛?ν븳 蹂댁븞 ?먭꺽利앸챸?쇰줈 ?몄쬆
-- VC claim ?덉뿉 role / permissions瑜??ｌ뼱 ?몄쬆怨?沅뚰븳遺?щ? 媛뺥븯寃??곌껐
-- ?ъ깮 怨듦꺽 諛⑹뼱, ?먭린/?뺤?, issuer trust allowlist, holder binding 媛숈? 蹂댁븞 寃利??ъ씤?몃? 紐낇솗???쒖뿰 媛??
-## ?몄쬆 ?먮쫫 ?ㅻ챸
-1. Verifier媛 `/admin`, `/audit`, `/dev` ?묎렐??authorization request ?앹꽦
-2. ?쒕쾭媛 nonce/state瑜?CSPRNG濡??앹꽦?섍퀬 SQLite??1?뚯꽦?쇰줈 ???3. Wallet???ъ슜???숈쓽 ??VC瑜??댁? VP JWT ?앹꽦
-4. VP JWT??`aud=client_id`, `nonce=<request nonce>`濡?諛붿씤??5. Verifier媛 direct_post ?섏떊 ???ㅼ쓬??寃利?   - issuer allowlist
-   - VC/VP signature
-   - expiration / nbf
-   - revocation / suspension
+## Why DID/VC
+This project demonstrates a security-oriented admin access model:
+- no shared admin password
+- signed credentials instead of static secrets
+- explicit issuer trust validation
+- replay-resistant authentication using nonce/state and VP JTI cache
+- RBAC bound directly to credential claims
+- credential suspension/revocation and auditable auth outcomes
+
+## Architecture Summary
+- **Frontend (`apps/web`)**: operator UI for issuer, wallet, verifier, and protected pages
+- **Backend (`apps/api`)**: issues credentials, stores encrypted wallet material, validates VP submissions, issues sessions, writes audit logs
+- **Shared (`packages/shared`)**: did:jwk, JOSE token signing/verification, role mapping, validation schemas/utilities
+- **Database (`SQLite`)**: credentials, wallets, sessions, auth requests, replay cache, audit logs, keystore
+
+## Authentication Flow
+1. Verifier creates an OpenID4VP-style authorization request for `/admin`, `/audit`, or `/dev`.
+2. Backend generates **cryptographically random nonce/state** and stores them as one-time auth request records.
+3. Wallet selects a stored VC and creates a **VP JWT** bound to:
+   - `aud = verifier client_id`
+   - `nonce = auth request nonce`
+4. Wallet submits the VP through **direct_post-style** backend handling.
+5. Verifier validates:
+   - issuer trust allowlist
+   - VC and VP signatures
+   - expiration / optional `nbf`
+   - credential status (active / suspended / revoked)
    - audience binding
-   - nonce/state ?쇱튂
-   - replay cache
+   - nonce binding
+   - state match
    - holder binding
-   - role / permission 留ㅽ븨
-6. ?깃났 ??HttpOnly ?몄뀡 荑좏궎 諛쒓툒
+   - role/path mapping
+   - replay via VP JTI cache
+6. On success, backend issues an **HttpOnly session cookie** and stores a CSRF token server-side.
 
-## RBAC ?ㅻ챸
-- `/admin` ??Admin留??덉슜
-- `/audit` ??Auditor留??덉슜
-- `/dev` ??Developer留??덉슜
-- 遺議깊븳 寃쎌슦 UI?먮뒗 `insufficient role`留??몄텧?섍퀬 ?곸꽭??媛먯궗濡쒓렇???④?
+## RBAC
+- `/admin` → **Admin** only
+- `/audit` → **Auditor** only
+- `/dev` → **Developer** only
 
-## replay 諛⑹뼱 ?ㅻ챸
-- nonce/state瑜?留??붿껌留덈떎 ?덈줈 ?앹꽦
-- auth request??1?뚯꽦 used ?뚮옒洹?泥섎━
-- VP jti瑜?replay cache????ν빐 ?숈씪 VP ?ъ젣異?李⑤떒
+When access is denied, the UI/API only exposes a summarized deny reason such as `insufficient role`, while detailed causes remain in audit logs.
 
-## revocation ?ㅻ챸
-- 濡쒖뺄 status registry瑜??ъ슜??`active / suspended / revoked` ?곹깭 愿由?- verifier??VC 寃利??댄썑 諛섎뱶???곹깭 議고쉶 ?섑뻾
-- 援ъ“???댄썑 Bitstring Status List 援ы쁽泥대줈 援먯껜 媛??
-## 蹂댁븞???쒓퀎? ?뺤옣 ?ъ씤??- 濡쒖뺄 MVP???ㅼ쨷 ?붾컮?댁뒪 ?붾젢 ?숆린???놁쓬
-- did:jwk??媛꾨떒?섏?留?怨듦컻 DID registry ?곕룞???놁쓬
-- ?꾩옱 issuer allowlist???⑥씪 local issuer DID 湲곗?
-- production ?꾪솚 ??secure cookie, HTTPS, key wrapping/HSM, device-bound wallet storage, DID resolver ?뺤옣 ?꾩슂
-- status service瑜??쒖? status list濡?援먯껜 媛??
-## API 寃쎄퀎? trust boundary
-- Frontend??presentation ?숈쓽? 愿由?UI留??대떦?섍퀬, ?좊ː ?먮떒? backend verifier媛 ?섑뻾
-- Backend issuer??VC 諛쒓툒 諛??곹깭 愿由ъ쓽 ?좊ː 猷⑦듃
-- Wallet ??μ냼??passphrase 湲곕컲 ?뷀샇??at-rest ?쒓났
-- Session? verifier ?깃났 ?댄썑?먮쭔 ?앹꽦
+## Replay Defense
+- secure random `nonce` and `state` per auth request
+- auth requests are marked **one-time use**
+- VP `jti` stored in replay cache
+- repeated submission of the same VP is rejected as `replay attempt`
+- VP is bound to verifier `client_id` and `nonce`
 
-## Mermaid ?꾪궎?띿쿂 ?ㅼ씠?닿렇??```mermaid
+## Revocation / Suspension
+Credential rows are tracked in a local status registry:
+- `active`
+- `suspended`
+- `revoked`
+
+Verifier checks local status after VC cryptographic verification. The status check is intentionally abstractable so it can later be replaced by a standard status list mechanism.
+
+## Security Limits and Extension Points
+Current MVP choices are intentional for local simplicity:
+- uses **did:jwk** instead of a network-resolved DID method
+- uses local SQLite-backed trust and status data
+- cookie security is configured for local HTTP demo use
+- wallet storage uses passphrase-based local encryption, not device-bound secure enclave storage
+
+Natural next steps:
+- switch to HTTPS + secure cookies
+- add DID resolver abstraction for `did:ethr`
+- replace local status registry with Bitstring Status List
+- use hardened key wrapping or HSM-backed issuer storage
+- add richer CSRF/session rotation and admin hardening
+
+## API Boundaries and Trust Boundary
+- **Frontend is untrusted for verification decisions**. It only initiates requests and shows results.
+- **Verifier module is the trust boundary** for VP validation and session issuance.
+- **Issuer module** is trusted to sign credentials using the locally generated issuer key.
+- **Wallet module** stores holder credentials encrypted at rest with passphrase-derived encryption.
+- **SQLite** is the local persistence layer for auth state, replay cache, and audit evidence.
+
+## Repository Tree
+```text
+did-vc-rbac-mvp/
+├─ apps/
+│  ├─ api/
+│  │  ├─ src/
+│  │  │  ├─ db/
+│  │  │  ├─ middleware/
+│  │  │  ├─ modules/
+│  │  │  │  ├─ audit/
+│  │  │  │  ├─ issuer/
+│  │  │  │  ├─ verifier/
+│  │  │  │  └─ wallet/
+│  │  │  ├─ security/
+│  │  │  └─ seed/
+│  │  └─ tests/
+│  └─ web/
+│     └─ src/
+│        ├─ components/
+│        ├─ hooks/
+│        ├─ lib/
+│        └─ pages/
+├─ docs/
+│  ├─ architecture.md
+│  └─ threat-model.md
+├─ packages/
+│  └─ shared/
+│     └─ src/
+└─ README.md
+```
+
+## Mermaid Architecture Diagram
+```mermaid
 flowchart LR
   UI[React Web App\nIssuer / Wallet / Verifier / Audit] --> API[Express API]
   API --> ISS[Issuer Module]
@@ -58,15 +128,11 @@ flowchart LR
   API --> VER[Verifier Module]
   API --> AUD[Audit Module]
   API --> DB[(SQLite)]
-  SH[Shared TS Package] --> UI
+  SH[Shared Package\nDID / JOSE / RBAC / Validation] --> UI
   SH --> API
-  VER --> DB
-  ISS --> DB
-  WAL --> DB
-  AUD --> DB
 ```
 
-## 濡쒖뺄 ?ㅽ뻾 諛⑸쾿
+## Local Run
 ```bash
 cd C:\Sjw_dev\Coding\did-vc-rbac-mvp
 copy .env.example .env
@@ -74,38 +140,55 @@ npm install
 npm run seed
 npm run dev
 ```
-- API: http://localhost:3001
-- Web: http://localhost:5173
 
-## ?쒖뿰 ?쒖꽌
-1. Wallet?먯꽌 Holder DID ?앹꽦
-2. Issuer?먯꽌 Admin/Auditor/Developer VC 諛쒓툒
-3. Wallet?먯꽌 VC import
-4. Verifier?먯꽌 `/admin` ?붿껌 ?앹꽦
-5. Wallet?먯꽌 request JSON 遺숈뿬?ｊ퀬 VP ?앹꽦
-6. Verifier??VP ?쒖텧 ???깃났 ??`/admin` ?묎렐 ?뺤씤
-7. 媛숈? 諛⑹떇?쇰줈 `/audit`, `/dev` ?뺤씤
-8. Issuer?먯꽌 credential revoke/suspend ???щ줈洹몄씤 ?ㅽ뙣 ?뺤씤
-9. 留뚮즺 VC濡??ㅽ뙣 ?뺤씤
-10. 媛숈? VP ?ъ젣異쒕줈 replay 諛⑹뼱 ?뺤씤
-11. VP 臾몄옄???쇰? 蹂議???tampered token ?ㅽ뙣 ?뺤씤
+Endpoints:
+- Web: <http://localhost:5173>
+- API: <http://localhost:3001>
 
-## ?ㅽ뻾 紐낅졊??```bash
+## Demo Sequence
+1. Create a holder DID in **Wallet**.
+2. Issue an **Admin** VC in **Issuer** and import it into Wallet.
+3. Start verifier login for `/admin`.
+4. Create VP from Wallet and submit it in Verifier.
+5. Access `/admin` successfully.
+6. Repeat with **Auditor** for `/audit` and **Developer** for `/dev`.
+7. Revoke a credential in Issuer and confirm login failure.
+8. Issue an expired credential and confirm login failure.
+9. Try wrong-role access and confirm denial.
+10. Re-submit the same VP and confirm replay detection.
+11. Tamper with a VP/VC token and confirm validation failure.
+
+## Commands
+```bash
 npm install
 npm run seed
 npm run dev
-npm run test
+npm run build
+npm test
 npm --workspace @did-vc-rbac/api run test
-npm --workspace @did-vc-rbac/web run build
+npm --workspace @did-vc-rbac/shared run test
+npm --workspace @did-vc-rbac/web run test
 ```
 
-## ?뚯뒪??踰붿쐞
-- unit: token validation, role mapping, status check, nonce/state validation
-- integration: ?뺤긽 濡쒓렇?? revoked 李⑤떒, expired 李⑤떒, replay 李⑤떒, insufficient role 李⑤떒
+## Test Scope
+### Unit tests
+- token validation
+- role mapping
+- status check
+- nonce/state validation
 
-## ???꾨줈?앺듃瑜??대젰?쒖뿉 ?대뼸寃??몄?
-1. DID/VC 湲곕컲 愿由ъ옄 肄섏넄 ?몄쬆 MVP瑜??ㅺ퀎쨌援ы쁽?섏뿬 鍮꾨?踰덊샇 ?녿뒗 愿由ъ옄 ?몄쬆怨?VC 湲곕컲 RBAC瑜?濡쒖뺄 ?섍꼍?먯꽌 ?ы쁽?덉뒿?덈떎.
-2. OpenID4VP ?ㅽ???direct_post ?먮쫫??nonce/state 1?뚯꽦 泥섎━? VP jti replay cache瑜??곸슜???ъ깮 怨듦꺽 諛⑹뼱瑜?援ы쁽?덉뒿?덈떎.
-3. did:jwk + JOSE 湲곕컲 VC/VP ?쒕챸 寃利? issuer allowlist, holder binding, audience binding???섎굹??verifier ?뚯씠?꾨씪?몄쑝濡??듯빀?덉뒿?덈떎.
-4. credential revocation/suspension ?곹깭 ?쒕퉬?ㅼ? SQLite 媛먯궗濡쒓렇瑜?援ы쁽???몄쬆 ?ㅽ뙣 ?ъ쑀瑜?蹂댁븞 愿痢?媛???뺥깭濡??쒓컖?뷀뻽?듬땲??
-5. React + Express + shared TypeScript monorepo 援ъ“濡?蹂댁븞 湲곕뒫怨?媛쒕컻 ?앹궛?깆쓣 ?숈떆??怨좊젮???ы듃?대━?ㅽ삎 ??ㅽ깮 ?쒖뒪?쒖쓣 ?꾩꽦?덉뒿?덈떎.
+### Integration tests
+- normal login success
+- revoked credential blocked
+- expired credential blocked
+- wrong audience blocked
+- replay blocked
+- insufficient role blocked
+- tampered token blocked
+
+## Resume-Friendly Bullet Examples
+1. Built a local TypeScript monorepo implementing DID-based admin authentication with VC-backed RBAC for privileged console access.
+2. Implemented OpenID4VP-style `direct_post` login with one-time nonce/state validation and VP replay protection using JTI cache.
+3. Designed verifier-side trust validation covering issuer allowlisting, signature verification, holder binding, audience binding, and credential status enforcement.
+4. Added local credential revocation/suspension workflows and audit logging for both successful and failed authentication events.
+5. Delivered a security portfolio MVP with React, Express, SQLite, and shared JOSE/DID utilities, optimized for single-developer local execution.

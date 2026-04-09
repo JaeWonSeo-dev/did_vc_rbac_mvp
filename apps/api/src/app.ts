@@ -64,14 +64,18 @@ export async function buildApp() {
       res.cookie(config.cookieName, session.sessionId, { httpOnly: true, sameSite: "lax", secure: false, path: "/" });
       res.json({ ok: true, targetPath: verified.targetPath, csrfToken: session.csrfToken, role: verified.role, holderDid: verified.holderDid });
     } catch (error: any) {
-      recordFailure(db, error.message, {
+      const rawMessage = String(error?.message ?? "verification failed");
+      const normalizedReason = /signature verification failed|jwt malformed|jws invalid|jwe invalid|invalid compact jws|invalid jwt|unexpected token/i.test(rawMessage)
+        ? "tampered token"
+        : rawMessage;
+      recordFailure(db, normalizedReason, {
         ip: req.ip,
         userAgent: req.get("user-agent"),
         targetPath: req.body?.targetPath,
-        detailReason: error.stack ?? error.message
+        detailReason: error.stack ?? rawMessage
       });
       const safeReasons = new Set(["expired credential", "revoked credential", "suspended credential", "wrong audience", "nonce mismatch", "state mismatch", "replay attempt", "insufficient role", "tampered token"]);
-      const safeReason = safeReasons.has(error.message) ? error.message : "verification failed";
+      const safeReason = safeReasons.has(normalizedReason) ? normalizedReason : "verification failed";
       res.status(401).json({ error: "Authentication failed", reason: safeReason });
     }
   });
