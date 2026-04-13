@@ -10,10 +10,15 @@ import { createWallet, importWalletCredential, listWalletCredentials, listWallet
 import { createAuthRequest, deleteSession, issueSession, recordFailure, verifyDirectPost } from "./modules/verifier/service";
 import { listAudit } from "./modules/audit/service";
 import {
+  approveCredentialRequest,
   completeGitHubOAuthCallback,
+  createCredentialRequest,
   createGitHubOAuthStart,
   getPublicPortfolioBySlug,
   issuePortfolioCredentialsFromEvidence,
+  listCredentialRequests,
+  rejectCredentialRequest,
+  replacePortfolioAchievements,
   replacePortfolioProjects,
   seedPortfolioDemoData,
   syncGitHubAccount,
@@ -43,6 +48,7 @@ export async function buildApp() {
       credentials: listCredentials(db),
       audit: listAudit(db, 10),
       portfolio: demoPortfolio,
+      requests: listCredentialRequests(db),
       session: (_req as any).session ? { role: (_req as any).session.role, holderDid: (_req as any).session.holder_did, csrfToken: (_req as any).session.csrf_token } : null
     });
   });
@@ -63,6 +69,46 @@ export async function buildApp() {
   app.put("/api/portfolio/users/:userId/projects", (req, res) => {
     try {
       res.json(replacePortfolioProjects(db, req.params.userId, Array.isArray(req.body?.projects) ? req.body.projects : []));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.put("/api/portfolio/users/:userId/achievements", (req, res) => {
+    try {
+      res.json(replacePortfolioAchievements(db, req.params.userId, Array.isArray(req.body?.achievements) ? req.body.achievements : []));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.post("/api/portfolio/users/:userId/requests", (req, res) => {
+    try {
+      res.json(createCredentialRequest(db, { userId: req.params.userId, ...req.body }));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.get("/api/portfolio/users/:userId/requests", (req, res) => {
+    res.json(listCredentialRequests(db, { userId: req.params.userId, status: typeof req.query.status === "string" ? req.query.status : undefined }));
+  });
+
+  app.get("/api/admin/portfolio/requests", (req, res) => {
+    res.json(listCredentialRequests(db, { status: typeof req.query.status === "string" ? req.query.status : undefined }));
+  });
+
+  app.post("/api/admin/portfolio/requests/:requestId/approve", async (req, res) => {
+    try {
+      res.json(await approveCredentialRequest(db, issuer, req.params.requestId, req.body?.reviewerNote));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.post("/api/admin/portfolio/requests/:requestId/reject", async (req, res) => {
+    try {
+      res.json(await rejectCredentialRequest(db, req.params.requestId, req.body?.reviewerNote));
     } catch (error: any) {
       res.status(400).json({ error: String(error?.message ?? error) });
     }

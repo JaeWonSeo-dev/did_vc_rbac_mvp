@@ -25,7 +25,7 @@ export function PortfolioPage() {
   if (error) return <p style={{ color: "#fca5a5" }}>{error}</p>;
   if (!data) return <p>Loading portfolio…</p>;
 
-  const { profile, github, projects, repositories, credentials, verificationLogs } = data;
+  const { profile, github, projects, achievements, repositories, credentials, credentialRequests, verificationLogs } = data;
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -48,7 +48,12 @@ export function PortfolioPage() {
           <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
             <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>GitHub evidence</div>
             <div>{github?.contributionSummary?.repositoryCount ?? 0} repos</div>
-            <div style={{ color: "#94a3b8", fontSize: 13 }}>{github?.contributionSummary?.languages?.join(", ") || "No languages synced"}</div>
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>{github?.contributionSummary?.evidenceNarrative || "No evidence narrative yet"}</div>
+          </div>
+          <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+            <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Non-GitHub evidence</div>
+            <div>{achievements.length} achievements</div>
+            <div style={{ color: "#94a3b8", fontSize: 13 }}>Awards, completions, certifications, and manual proof</div>
           </div>
         </div>
       </section>
@@ -82,6 +87,27 @@ export function PortfolioPage() {
       </section>
 
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
+        <h3 style={{ marginTop: 0 }}>Awards, completions, and manual achievements</h3>
+        <div style={{ display: "grid", gap: 16 }}>
+          {achievements.map((achievement: any) => (
+            <div key={achievement.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <strong>{achievement.title}</strong>
+                <span style={{ color: "#93c5fd" }}>{achievement.category}</span>
+              </div>
+              <p>{achievement.description}</p>
+              <ul>
+                <li>Issuer: {achievement.issuer_name || "self-attested / manual evidence"}</li>
+                <li>Issued on: {achievement.issued_on || "n/a"}</li>
+                {achievement.credential_url ? <li><a href={achievement.credential_url} target="_blank" rel="noreferrer">Open proof link</a></li> : null}
+              </ul>
+              {achievement.evidence?.length ? <ul>{achievement.evidence.map((item: string) => <li key={item}>{item}</li>)}</ul> : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>GitHub evidence snapshot</h3>
         <div style={{ display: "grid", gap: 16 }}>
           {repositories.map((repo: any) => (
@@ -95,9 +121,29 @@ export function PortfolioPage() {
                 <li>Role: {repo.contribution_role}</li>
                 <li>Language: {repo.language || "n/a"}</li>
                 <li>Stars: {repo.stargazers_count}</li>
-                <li>Estimated contribution count: {repo.estimated_contribution_count}</li>
-                <li>Estimated merged PR count: {repo.estimated_merged_pr_count}</li>
+                <li>Observed contributions: {repo.estimated_contribution_count}</li>
+                <li>Observed merged PRs: {repo.estimated_merged_pr_count}</li>
+                <li>Evidence confidence: {repo.summary?.confidence || "heuristic"}</li>
+                <li>Activity window: {repo.summary?.activityWindow?.start || "n/a"} → {repo.summary?.activityWindow?.end || "n/a"}</li>
               </ul>
+              {repo.summary?.proofSummary ? <p style={{ color: "#cbd5e1" }}>{repo.summary.proofSummary}</p> : null}
+              {repo.summary?.proofPoints?.length ? <ul>{repo.summary.proofPoints.map((item: string) => <li key={item}>{item}</li>)}</ul> : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
+        <h3 style={{ marginTop: 0 }}>Credential requests and issuer decisions</h3>
+        <div style={{ display: "grid", gap: 16 }}>
+          {credentialRequests.map((request: any) => (
+            <div key={request.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <strong>{request.request_type}</strong>
+                <span style={{ color: request.status === "approved" ? "#4ade80" : request.status === "rejected" ? "#fca5a5" : "#fbbf24" }}>{request.status}</span>
+              </div>
+              <p>{request.target_name || "General evidence request"}</p>
+              {request.reviewer_note ? <p style={{ color: "#cbd5e1" }}>Issuer note: {request.reviewer_note}</p> : <p style={{ color: "#94a3b8" }}>Awaiting issuer/admin review.</p>}
             </div>
           ))}
         </div>
@@ -110,7 +156,7 @@ export function PortfolioPage() {
             <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <strong>{credential.credential_type}</strong>
-                <span style={{ color: credential.status === "active" ? "#4ade80" : "#fbbf24" }}>{credential.status}</span>
+                <span style={{ color: credential.status === "active" ? "#4ade80" : credential.status === "revoked" ? "#fca5a5" : "#fbbf24" }}>{credential.status}</span>
               </div>
               <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
               <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>

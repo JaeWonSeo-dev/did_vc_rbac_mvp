@@ -40,7 +40,7 @@ export function VerifyCredentialPage() {
           </div>
           <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
             <div style={{ color: "#94a3b8", fontSize: 12, textTransform: "uppercase" }}>Registry status</div>
-            <div style={{ color: data.status === "active" ? "#4ade80" : "#fbbf24", fontWeight: 700 }}>{data.status}</div>
+            <div style={{ color: data.status === "active" ? "#4ade80" : data.status === "revoked" ? "#fca5a5" : "#fbbf24", fontWeight: 700 }}>{data.status}</div>
           </div>
           <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
             <div style={{ color: "#94a3b8", fontSize: 12, textTransform: "uppercase" }}>Expiry</div>
@@ -57,6 +57,7 @@ export function VerifyCredentialPage() {
           <li>Credential type: {data.credentialType}</li>
           <li>Subject DID: {data.subjectDid}</li>
           <li>Portfolio: {data.portfolioSlug ? <Link to={`/portfolio/${data.portfolioSlug}`}>{data.portfolioSlug}</Link> : "n/a"}</li>
+          <li>Status meaning: {data.statusExplainer}</li>
         </ul>
       </section>
 

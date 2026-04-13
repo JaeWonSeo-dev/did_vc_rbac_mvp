@@ -6,34 +6,39 @@ A local DID/VC portfolio product that turns developer evidence into recruiter-fr
 This project lets a developer:
 - create a DID-backed portfolio identity
 - sync GitHub account and repository evidence
+- add non-GitHub evidence such as awards, completions, and manual achievements
 - edit a public portfolio with bio, projects, and highlights
-- issue portfolio credentials from synced evidence
+- submit credential requests for issuer/admin review
+- issue portfolio credentials from reviewed evidence
 - share a recruiter verification page that shows issuer, signature validity, credential status, and expiry clearly
 
 The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legacy surfaces, but the portfolio product is now the primary frontend narrative.
 
 ## MVP scope
 ### Included now
-- portfolio dashboard for editing bio, slug, and featured projects/highlights
+- portfolio dashboard for editing bio, slug, featured projects, achievements, and evidence highlights
 - public portfolio page
 - recruiter verification page
 - GitHub OAuth bootstrap endpoints
 - GitHub evidence sync and local persistence
+- richer GitHub evidence modeling with observed contribution counts, merged PR counts, proof points, and sync-window summaries
+- credential request → issuer/admin review → approve/reject workflow
 - two VC types:
   - `GitHubAccountOwnershipCredential`
   - `GitHubContributionCredential`
-- VC verification with issuer, subject, status, and expiry shown in the UI
+- VC verification with issuer, subject, status, status meaning, and expiry shown in the UI
 
 ### Still intentionally simplified
-- GitHub contribution counts are estimated from synced repository metadata, not full commit/PR graph ingestion
+- GitHub contribution counts are still MVP-practical and partly heuristic; they are stronger than before, but not yet a full commit graph / PR event ingestion pipeline
 - issuer trust and credential status are local SQLite records
+- admin review is intentionally local-first rather than multi-user auth hardened
 - default seed/demo data is local-first for fast review
 - legacy issuer/wallet/verifier routes remain for reuse and backward compatibility
 
 ## Repository layout
 ```text
 apps/
-  api/   Express API for portfolio, GitHub sync, issuance, verification, and legacy RBAC flows
+  api/   Express API for portfolio, GitHub sync, credential requests/review, issuance, verification, and legacy RBAC flows
   web/   React UI for dashboard, public portfolio, recruiter verification, and legacy tools
 packages/
   shared/ Shared DID, JOSE, VC schema, and legacy RBAC helpers
@@ -48,14 +53,21 @@ docs/
 ### Developer
 1. Open the dashboard.
 2. Edit bio, headline, portfolio slug, featured projects, and highlights.
-3. Connect GitHub through OAuth.
-4. Sync GitHub evidence.
-5. Issue portfolio credentials.
-6. Share the public portfolio or direct verification link.
+3. Add awards, completions, certifications, and manual achievements.
+4. Connect GitHub through OAuth.
+5. Sync GitHub evidence.
+6. Submit a credential request for issuer review.
+7. Receive an approval/rejection decision and issued credential.
+8. Share the public portfolio or direct verification link.
+
+### Issuer / Admin
+1. Open the review queue in the dashboard.
+2. Inspect the request payload and evidence summary.
+3. Approve and issue a credential, or reject with a reviewer note.
 
 ### Recruiter
 1. Open a portfolio link.
-2. Review featured projects and synced GitHub evidence.
+2. Review featured projects, non-GitHub achievements, and synced GitHub evidence.
 3. Open a credential verification page.
 4. Confirm signature validity, issuer DID, status, and expiry.
 
@@ -85,15 +97,15 @@ npm --workspace @did-vc-rbac/web run test
 ```
 
 ## Current architecture notes
-- **Frontend**: React + Vite, portfolio-first layout, legacy RBAC tools behind a collapsed section
-- **Backend**: Express modules for portfolio data, GitHub OAuth/sync, issuance, verification, plus legacy issuer/wallet/verifier services
-- **Persistence**: SQLite for users, GitHub sync data, portfolio projects, portfolio credentials, verification logs, and legacy auth state
+- **Frontend**: React + Vite, portfolio-first layout, local issuer/admin review panel, legacy RBAC tools behind a collapsed section
+- **Backend**: Express modules for portfolio data, GitHub OAuth/sync, credential requests/review, issuance, verification, plus legacy issuer/wallet/verifier services
+- **Persistence**: SQLite for users, GitHub sync data, portfolio projects, achievements, credential requests, portfolio credentials, verification logs, and legacy auth state
 - **VC format**: JWT VC using `did:jwk` for local simplicity
 
-## MVP gaps still remaining
-- real GitHub activity ingestion for commits, PRs, and merged PR evidence instead of heuristics
-- richer credential status UX for revoked/suspended edge cases on the public page
-- stronger issuer/admin review flow before issuing credentials
+## Remaining gaps
+- real GitHub activity ingestion for user-specific commits, authored PRs, merged PRs, and starred evidence instead of partial repo-level inference
+- a dedicated VC type for manual achievement / award proof instead of just rendering the evidence on the public page
+- stronger multi-user auth and authorization around issuer/admin review surfaces
 - better visual design and component reuse beyond inline styles
 - deployment docs for a shareable online demo
 

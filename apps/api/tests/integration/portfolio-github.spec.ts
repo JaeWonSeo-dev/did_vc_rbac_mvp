@@ -84,14 +84,42 @@ describe("portfolio github flow", () => {
           }
         ]), { status: 200, headers: { "Content-Type": "application/json" } });
       }
+      if (url.includes("/repos/octo-dev/portfolio-service/pulls")) {
+        return new Response(JSON.stringify([
+          { id: 11, merged_at: "2026-04-10T00:00:00Z" },
+          { id: 12, merged_at: "2026-04-08T00:00:00Z" },
+          { id: 13, merged_at: null }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (url.includes("/repos/octo-dev/oss-contrib/pulls")) {
+        return new Response(JSON.stringify([
+          { id: 21, merged_at: "2026-04-09T00:00:00Z" }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (url.includes("/repos/octo-dev/portfolio-service/contributors")) {
+        return new Response(JSON.stringify([
+          { login: "octo-dev", contributions: 14 },
+          { login: "pair-dev", contributions: 4 }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (url.includes("/repos/octo-dev/oss-contrib/contributors")) {
+        return new Response(JSON.stringify([
+          { login: "octo-dev", contributions: 5 }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
       throw new Error(`unexpected fetch ${url}`);
     }) as any;
   });
 
-  it("exchanges github oauth code, syncs evidence, and issues portfolio credentials", async () => {
+  it("exchanges github oauth code, syncs evidence, supports request review, and issues portfolio credentials", async () => {
     const createdUser = await request(app)
       .post("/api/portfolio/users")
       .send({ did: "did:jwk:test-user", displayName: "Octo Dev", headline: "Developer", bio: "Bio", portfolioSlug: "octo-dev" })
+      .expect(200);
+
+    await request(app)
+      .put(`/api/portfolio/users/${createdUser.body.id}/achievements`)
+      .send({ achievements: [{ title: "Hackathon Winner", category: "award", issuerName: "Seoul Hack Week", issuedOn: "2026-04-01", description: "Won first place", evidence: ["Award letter"] }] })
       .expect(200);
 
     const start = await request(app)
@@ -107,20 +135,45 @@ describe("portfolio github flow", () => {
     expect(callback.body.githubUsername).toBe("octo-dev");
     expect(callback.body.repositoryCount).toBe(2);
 
-    const issued = await request(app)
-      .post(`/api/portfolio/${createdUser.body.id}/credentials/issue`)
-      .send({ repositoryName: "portfolio-service", commitCount: 14, mergedPrCount: 4, evidenceSummary: "Manual override evidence summary" })
+    const requestCreated = await request(app)
+      .post(`/api/portfolio/users/${createdUser.body.id}/requests`)
+      .send({
+        requestType: "GitHubContributionCredential",
+        targetName: "portfolio-service",
+        targetUrl: "https://github.com/octo-dev/portfolio-service",
+        evidenceOrigin: "github",
+        payload: {
+          repositoryName: "portfolio-service",
+          role: "owner",
+          commitCount: 14,
+          mergedPrCount: 2,
+          periodStart: "2026-01-13",
+          periodEnd: "2026-04-13",
+          evidenceSummary: "Requesting review for the main portfolio repository"
+        }
+      })
       .expect(200);
 
-    expect(issued.body.credentials).toHaveLength(2);
+    expect(requestCreated.body.status).toBe("pending");
+
+    const approved = await request(app)
+      .post(`/api/admin/portfolio/requests/${requestCreated.body.id}/approve`)
+      .send({ reviewerNote: "Evidence checked by issuer admin." })
+      .expect(200);
+
+    expect(approved.body.status).toBe("approved");
 
     const portfolio = await request(app).get("/api/portfolio/octo-dev").expect(200);
     expect(portfolio.body.github.username).toBe("octo-dev");
     expect(portfolio.body.repositories).toHaveLength(2);
+    expect(portfolio.body.achievements).toHaveLength(1);
+    expect(portfolio.body.credentialRequests.some((item: any) => item.status === "approved")).toBe(true);
     expect(portfolio.body.credentials.map((item: any) => item.credential_type)).toEqual(expect.arrayContaining([
       "GitHubAccountOwnershipCredential",
       "GitHubContributionCredential"
     ]));
+    expect(portfolio.body.github.contributionSummary.totalEstimatedCommits).toBeGreaterThanOrEqual(19);
+    expect(portfolio.body.repositories[0].summary.proofPoints.length).toBeGreaterThan(0);
   });
 });
 
