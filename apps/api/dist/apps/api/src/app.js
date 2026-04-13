@@ -9,7 +9,7 @@ import { issueCredential, listCredentials, updateCredentialStatus } from "./modu
 import { createWallet, importWalletCredential, listWalletCredentials, listWallets, createPresentation } from "./modules/wallet/service";
 import { createAuthRequest, deleteSession, issueSession, recordFailure, verifyDirectPost } from "./modules/verifier/service";
 import { listAudit } from "./modules/audit/service";
-import { completeGitHubOAuthCallback, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, replacePortfolioProjects, seedPortfolioDemoData, syncGitHubAccount, updatePortfolioProfile, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
+import { approveCredentialRequest, completeGitHubOAuthCallback, createCredentialRequest, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, listCredentialRequests, rejectCredentialRequest, replacePortfolioAchievements, replacePortfolioProjects, seedPortfolioDemoData, syncGitHubAccount, updatePortfolioProfile, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
 import { requiredRoleForPath } from "@did-vc-rbac/shared";
 export async function buildApp() {
     const db = createDb(config.databasePath);
@@ -29,6 +29,7 @@ export async function buildApp() {
             credentials: listCredentials(db),
             audit: listAudit(db, 10),
             portfolio: demoPortfolio,
+            requests: listCredentialRequests(db),
             session: _req.session ? { role: _req.session.role, holderDid: _req.session.holder_did, csrfToken: _req.session.csrf_token } : null
         });
     });
@@ -47,6 +48,44 @@ export async function buildApp() {
     app.put("/api/portfolio/users/:userId/projects", (req, res) => {
         try {
             res.json(replacePortfolioProjects(db, req.params.userId, Array.isArray(req.body?.projects) ? req.body.projects : []));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.put("/api/portfolio/users/:userId/achievements", (req, res) => {
+        try {
+            res.json(replacePortfolioAchievements(db, req.params.userId, Array.isArray(req.body?.achievements) ? req.body.achievements : []));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.post("/api/portfolio/users/:userId/requests", (req, res) => {
+        try {
+            res.json(createCredentialRequest(db, { userId: req.params.userId, ...req.body }));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.get("/api/portfolio/users/:userId/requests", (req, res) => {
+        res.json(listCredentialRequests(db, { userId: req.params.userId, status: typeof req.query.status === "string" ? req.query.status : undefined }));
+    });
+    app.get("/api/admin/portfolio/requests", (req, res) => {
+        res.json(listCredentialRequests(db, { status: typeof req.query.status === "string" ? req.query.status : undefined }));
+    });
+    app.post("/api/admin/portfolio/requests/:requestId/approve", async (req, res) => {
+        try {
+            res.json(await approveCredentialRequest(db, issuer, req.params.requestId, req.body?.reviewerNote));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.post("/api/admin/portfolio/requests/:requestId/reject", async (req, res) => {
+        try {
+            res.json(await rejectCredentialRequest(db, req.params.requestId, req.body?.reviewerNote));
         }
         catch (error) {
             res.status(400).json({ error: String(error?.message ?? error) });

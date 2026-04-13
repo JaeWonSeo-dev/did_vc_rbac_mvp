@@ -149,6 +149,22 @@ CREATE TABLE IF NOT EXISTS portfolio_projects (
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS portfolio_achievements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  issuer_name TEXT,
+  issued_on TEXT,
+  credential_url TEXT,
+  description TEXT,
+  evidence_json TEXT NOT NULL DEFAULT '[]',
+  featured INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS portfolio_credentials (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   credential_jti TEXT UNIQUE NOT NULL,
@@ -160,6 +176,22 @@ CREATE TABLE IF NOT EXISTS portfolio_credentials (
   issued_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
   created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS credential_requests (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  request_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  target_name TEXT,
+  target_url TEXT,
+  evidence_origin TEXT NOT NULL DEFAULT 'github',
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  reviewer_note TEXT,
+  issued_credential_jti TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  reviewed_at INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS github_oauth_states (
