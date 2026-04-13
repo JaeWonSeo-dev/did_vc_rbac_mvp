@@ -2,6 +2,43 @@ import { z } from "zod";
 export const RoleSchema = z.enum(["Admin", "Auditor", "Developer"]);
 export const CredentialStatusSchema = z.enum(["active", "suspended", "revoked"]);
 export const PermissionSchema = z.string().min(1);
+export const LocalCredentialStatusSchema = z.object({
+    id: z.string(),
+    type: z.literal("LocalCredentialStatus")
+});
+export const RbacCredentialSubjectSchema = z.object({
+    id: z.string(),
+    role: RoleSchema,
+    permissions: z.array(PermissionSchema)
+});
+export const GitHubAccountOwnershipCredentialSubjectSchema = z.object({
+    id: z.string(),
+    githubUsername: z.string(),
+    githubProfileUrl: z.string().url(),
+    verifiedAt: z.number()
+});
+export const GitHubContributionCredentialSubjectSchema = z.object({
+    id: z.string(),
+    repository: z.string(),
+    repositoryUrl: z.string().url(),
+    role: z.string(),
+    commitCount: z.number().int().nonnegative(),
+    mergedPrCount: z.number().int().nonnegative(),
+    period: z.object({
+        start: z.string(),
+        end: z.string()
+    }),
+    evidenceSummary: z.string()
+});
+export const PortfolioCredentialSubjectSchema = z.union([
+    GitHubAccountOwnershipCredentialSubjectSchema,
+    GitHubContributionCredentialSubjectSchema
+]);
+export const CredentialSubjectSchema = z.union([
+    RbacCredentialSubjectSchema,
+    GitHubAccountOwnershipCredentialSubjectSchema,
+    GitHubContributionCredentialSubjectSchema
+]);
 export const VcClaimsSchema = z.object({
     jti: z.string(),
     iss: z.string(),
@@ -11,15 +48,8 @@ export const VcClaimsSchema = z.object({
     nbf: z.number().optional(),
     vc: z.object({
         type: z.array(z.string()),
-        credentialSubject: z.object({
-            id: z.string(),
-            role: RoleSchema,
-            permissions: z.array(PermissionSchema)
-        }),
-        credentialStatus: z.object({
-            id: z.string(),
-            type: z.literal("LocalCredentialStatus")
-        })
+        credentialSubject: CredentialSubjectSchema,
+        credentialStatus: LocalCredentialStatusSchema
     })
 });
 export const VpClaimsSchema = z.object({

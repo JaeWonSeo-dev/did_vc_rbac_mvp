@@ -15,10 +15,11 @@ export async function importWalletCredential(db, holderDid, passphrase, vcJwt) {
         throw new Error("wallet not found");
     decryptJson(JSON.parse(wallet.encrypted_private_jwk), passphrase);
     const claims = await verifyVcJwt(vcJwt, undefined, { ignoreExpiration: true });
+    const subject = claims.vc.credentialSubject;
     const encryptedCredential = encryptJson({ vcJwt }, passphrase);
     db.prepare(`INSERT INTO wallet_credentials(holder_did, credential_jti, vc_jwt_encrypted, role, permissions_json, issuer_did, added_at)
     VALUES(?, ?, ?, ?, ?, ?, ?)`)
-        .run(holderDid, claims.jti, JSON.stringify(encryptedCredential), claims.vc.credentialSubject.role, JSON.stringify(claims.vc.credentialSubject.permissions), claims.iss, Date.now());
+        .run(holderDid, claims.jti, JSON.stringify(encryptedCredential), subject.role ?? "PortfolioCredential", JSON.stringify(subject.permissions ?? []), claims.iss, Date.now());
     return claims;
 }
 export function listWallets(db) {

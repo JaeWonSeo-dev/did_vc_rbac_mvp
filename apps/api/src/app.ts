@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { config } from "./config";
@@ -9,11 +9,20 @@ import { issueCredential, listCredentials, updateCredentialStatus } from "./modu
 import { createWallet, importWalletCredential, listWalletCredentials, listWallets, createPresentation } from "./modules/wallet/service";
 import { createAuthRequest, deleteSession, issueSession, recordFailure, verifyDirectPost } from "./modules/verifier/service";
 import { listAudit } from "./modules/audit/service";
+import {
+  completeGitHubOAuthCallback,
+  createGitHubOAuthStart,
+  getPublicPortfolioBySlug,
+  seedPortfolioDemoData,
+  upsertUserProfile,
+  verifyPortfolioCredential
+} from "./modules/portfolio/service";
 import { requiredRoleForPath } from "@did-vc-rbac/shared";
 
 export async function buildApp() {
   const db = createDb(config.databasePath);
   const issuer = await ensureIssuerKey(db, config.keyAlias);
+  await seedPortfolioDemoData(db, issuer);
   const app = express();
   app.use(cors({ origin: config.webOrigin, credentials: true }));
   app.use(express.json({ limit: "1mb" }));
@@ -23,13 +32,51 @@ export async function buildApp() {
   app.get("/api/health", (_req, res) => res.json({ ok: true, issuerDid: issuer.did }));
 
   app.get("/api/system/summary", (_req, res) => {
+    const demoPortfolio = getPublicPortfolioBySlug(db, "sjw-dev");
     res.json({
       issuerDid: issuer.did,
       wallets: listWallets(db),
       credentials: listCredentials(db),
       audit: listAudit(db, 10),
-      session: ( _req as any).session ? { role: (_req as any).session.role, holderDid: (_req as any).session.holder_did, csrfToken: (_req as any).session.csrf_token } : null
+      portfolio: demoPortfolio,
+      session: (_req as any).session ? { role: (_req as any).session.role, holderDid: (_req as any).session.holder_did, csrfToken: (_req as any).session.csrf_token } : null
     });
+  });
+
+  app.post("/api/portfolio/users", (req, res) => {
+    const user = upsertUserProfile(db, req.body);
+    res.json(user);
+  });
+
+  app.get("/api/portfolio/:slug", (req, res) => {
+    const portfolio = getPublicPortfolioBySlug(db, req.params.slug);
+    if (!portfolio) return res.status(404).json({ error: "portfolio not found" });
+    res.json(portfolio);
+  });
+
+  app.get("/api/portfolio/:slug/credentials", (req, res) => {
+    const portfolio = getPublicPortfolioBySlug(db, req.params.slug);
+    if (!portfolio) return res.status(404).json({ error: "portfolio not found" });
+    res.json(portfolio.credentials);
+  });
+
+  app.get("/api/verify/:jti", async (req, res) => {
+    const result = await verifyPortfolioCredential(db, req.params.jti, String(req.get("user-agent") ?? "public-recruiter"));
+    if (!result.ok) return res.status(404).json(result);
+    res.json(result);
+  });
+
+  app.post("/api/github/oauth/start", (req, res) => {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+    res.json(createGitHubOAuthStart(db, config, userId));
+  });
+
+  app.get("/api/github/oauth/callback", (req, res) => {
+    res.json(completeGitHubOAuthCallback(db, config, {
+      code: typeof req.query.code === "string" ? req.query.code : undefined,
+      state: typeof req.query.state === "string" ? req.query.state : undefined
+    }));
   });
 
   app.post("/api/issuer/credentials", async (req, res) => {

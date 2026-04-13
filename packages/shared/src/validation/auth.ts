@@ -1,4 +1,4 @@
-﻿import type { AuthRequest, CredentialStatus, Role, VcClaims } from "../schemas/types";
+import type { AuthRequest, CredentialStatus, Role, VcClaims } from "../schemas/types";
 import { AuthRequestSchema } from "../schemas/types";
 import { hasRequiredRole } from "../rbac/roles";
 
@@ -19,8 +19,11 @@ export function validateCredentialStatus(status: CredentialStatus) {
 }
 
 export function validatePathRole(claims: VcClaims, targetPath: string) {
-  const role: Role = claims.vc.credentialSubject.role;
-  if (!hasRequiredRole(role, targetPath)) {
+  const subject = claims.vc.credentialSubject as { role?: Role };
+  if (!subject.role) {
+    return { ok: false as const, reason: "insufficient role" };
+  }
+  if (!hasRequiredRole(subject.role, targetPath)) {
     return { ok: false as const, reason: "insufficient role" };
   }
   return { ok: true as const };

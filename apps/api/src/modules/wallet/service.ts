@@ -1,4 +1,4 @@
-﻿import { createDidJwk, verifyVcJwt, signVpJwt, type AuthRequest } from "@did-vc-rbac/shared";
+import { createDidJwk, verifyVcJwt, signVpJwt, type AuthRequest } from "@did-vc-rbac/shared";
 import { randomUUID } from "node:crypto";
 import { decryptJson, encryptJson } from "../../security/crypto";
 
@@ -16,10 +16,11 @@ export async function importWalletCredential(db: any, holderDid: string, passphr
   if (!wallet) throw new Error("wallet not found");
   decryptJson(JSON.parse(wallet.encrypted_private_jwk), passphrase);
   const claims = await verifyVcJwt(vcJwt, undefined, { ignoreExpiration: true });
+  const subject = claims.vc.credentialSubject as { role?: string; permissions?: string[] };
   const encryptedCredential = encryptJson({ vcJwt }, passphrase);
   db.prepare(`INSERT INTO wallet_credentials(holder_did, credential_jti, vc_jwt_encrypted, role, permissions_json, issuer_did, added_at)
     VALUES(?, ?, ?, ?, ?, ?, ?)`)
-    .run(holderDid, claims.jti, JSON.stringify(encryptedCredential), claims.vc.credentialSubject.role, JSON.stringify(claims.vc.credentialSubject.permissions), claims.iss, Date.now());
+    .run(holderDid, claims.jti, JSON.stringify(encryptedCredential), subject.role ?? "PortfolioCredential", JSON.stringify(subject.permissions ?? []), claims.iss, Date.now());
   return claims;
 }
 

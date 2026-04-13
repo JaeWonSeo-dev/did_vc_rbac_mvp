@@ -106,10 +106,11 @@ export async function verifyDirectPost(db: any, config: any, input: any, request
     userAgent: requestMeta.userAgent
   });
 
+  const subject = vcClaims.vc.credentialSubject as { role?: string; permissions?: string[] };
   return {
     holderDid,
-    role: vcClaims.vc.credentialSubject.role,
-    permissions: vcClaims.vc.credentialSubject.permissions,
+    role: subject.role ?? "Unknown",
+    permissions: subject.permissions ?? [],
     credentialJti: vcClaims.jti,
     targetPath: authRequest.target_path
   };

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 export async function issueCredential(db, issuer, input) {
     const now = Math.floor(Date.now() / 1000);
     const jti = randomUUID();
+    const permissions = ROLE_PERMISSIONS[input.role];
     const claims = {
         jti,
         iss: issuer.did,
@@ -14,7 +15,7 @@ export async function issueCredential(db, issuer, input) {
             credentialSubject: {
                 id: input.subjectDid,
                 role: input.role,
-                permissions: ROLE_PERMISSIONS[input.role]
+                permissions
             },
             credentialStatus: {
                 id: `status:${jti}`,
@@ -26,7 +27,7 @@ export async function issueCredential(db, issuer, input) {
     const timestamp = Date.now();
     db.prepare(`INSERT INTO credentials(jti, subject_did, issuer_did, role, permissions_json, vc_jwt, status, issued_at, expires_at, created_at, updated_at)
     VALUES(?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)`)
-        .run(jti, input.subjectDid, issuer.did, input.role, JSON.stringify(claims.vc.credentialSubject.permissions), vcJwt, claims.iat, claims.exp, timestamp, timestamp);
+        .run(jti, input.subjectDid, issuer.did, input.role, JSON.stringify(permissions), vcJwt, claims.iat, claims.exp, timestamp, timestamp);
     return { claims, vcJwt };
 }
 export function listCredentials(db) {

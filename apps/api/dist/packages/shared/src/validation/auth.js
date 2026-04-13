@@ -18,8 +18,11 @@ export function validateCredentialStatus(status) {
     return { ok: true };
 }
 export function validatePathRole(claims, targetPath) {
-    const role = claims.vc.credentialSubject.role;
-    if (!hasRequiredRole(role, targetPath)) {
+    const subject = claims.vc.credentialSubject;
+    if (!subject.role) {
+        return { ok: false, reason: "insufficient role" };
+    }
+    if (!hasRequiredRole(subject.role, targetPath)) {
         return { ok: false, reason: "insufficient role" };
     }
     return { ok: true };
