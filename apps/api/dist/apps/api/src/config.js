@@ -14,5 +14,7 @@ export const config = {
     githubClientId: process.env.GITHUB_CLIENT_ID ?? "github-client-id-placeholder",
     githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "github-client-secret-placeholder",
     githubAuthorizeUrl: process.env.GITHUB_AUTHORIZE_URL ?? "https://github.com/login/oauth/authorize",
+    githubTokenUrl: process.env.GITHUB_TOKEN_URL ?? "https://github.com/login/oauth/access_token",
+    githubApiBaseUrl: process.env.GITHUB_API_BASE_URL ?? "https://api.github.com",
     githubCallbackUrl: process.env.GITHUB_CALLBACK_URL ?? `${webOrigin}/github/callback`
 };

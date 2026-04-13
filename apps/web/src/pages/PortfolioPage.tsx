@@ -16,7 +16,7 @@ export function PortfolioPage() {
   if (error) return <p style={{ color: "#fca5a5" }}>{error}</p>;
   if (!data) return <p>Loading portfolio…</p>;
 
-  const { profile, github, projects, credentials } = data;
+  const { profile, github, projects, repositories, credentials, verificationLogs } = data;
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
@@ -28,7 +28,29 @@ export function PortfolioPage() {
           <li>DID: {profile.did}</li>
           <li>Location: {profile.location}</li>
           <li>GitHub: {github?.username ? <a href={github.profile_url} target="_blank" rel="noreferrer">@{github.username}</a> : "pending link"}</li>
+          <li>Repo count: {github?.contributionSummary?.repositoryCount ?? 0}</li>
+          <li>Languages: {github?.contributionSummary?.languages?.join(", ") || "n/a"}</li>
         </ul>
+      </section>
+
+      <section style={{ padding: 20, borderRadius: 16, background: "#111830", border: "1px solid #24324f" }}>
+        <h3 style={{ marginTop: 0 }}>GitHub evidence snapshot</h3>
+        <div style={{ display: "grid", gap: 16 }}>
+          {repositories.map((repo: any) => (
+            <div key={repo.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
+              <strong>{repo.full_name}</strong>
+              <p>{repo.description}</p>
+              <ul>
+                <li>Role: {repo.contribution_role}</li>
+                <li>Language: {repo.language || "n/a"}</li>
+                <li>Stars: {repo.stargazers_count}</li>
+                <li>Estimated contribution count: {repo.estimated_contribution_count}</li>
+                <li>Estimated merged PR count: {repo.estimated_merged_pr_count}</li>
+              </ul>
+              <a href={repo.repo_url} target="_blank" rel="noreferrer">Open repository</a>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section style={{ padding: 20, borderRadius: 16, background: "#111830", border: "1px solid #24324f" }}>
@@ -59,6 +81,17 @@ export function PortfolioPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section style={{ padding: 20, borderRadius: 16, background: "#111830", border: "1px solid #24324f" }}>
+        <h3 style={{ marginTop: 0 }}>Recent verification activity</h3>
+        {verificationLogs.length ? (
+          <ul>
+            {verificationLogs.map((log: any) => (
+              <li key={log.id}>{new Date(log.created_at).toLocaleString()} · {log.result} · {log.reason}</li>
+            ))}
+          </ul>
+        ) : <p>No recruiter verification checks yet.</p>}
       </section>
     </div>
   );

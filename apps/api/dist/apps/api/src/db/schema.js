@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS github_accounts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id TEXT NOT NULL,
+  user_id TEXT NOT NULL UNIQUE,
   github_user_id TEXT,
   username TEXT,
   profile_url TEXT,
@@ -109,7 +109,32 @@ CREATE TABLE IF NOT EXISTS github_accounts (
   scope TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   linked_at INTEGER,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  profile_json TEXT NOT NULL DEFAULT '{}',
+  contribution_summary_json TEXT NOT NULL DEFAULT '{}'
+);
+
+CREATE TABLE IF NOT EXISTS github_repositories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  github_repo_id TEXT,
+  name TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  description TEXT,
+  repo_url TEXT NOT NULL,
+  homepage_url TEXT,
+  language TEXT,
+  stargazers_count INTEGER NOT NULL DEFAULT 0,
+  forks_count INTEGER NOT NULL DEFAULT 0,
+  watchers_count INTEGER NOT NULL DEFAULT 0,
+  open_issues_count INTEGER NOT NULL DEFAULT 0,
+  default_branch TEXT,
+  pushed_at TEXT,
+  updated_at TEXT,
+  contribution_role TEXT,
+  estimated_contribution_count INTEGER NOT NULL DEFAULT 0,
+  estimated_merged_pr_count INTEGER NOT NULL DEFAULT 0,
+  summary_json TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS portfolio_projects (

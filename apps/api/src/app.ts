@@ -13,7 +13,9 @@ import {
   completeGitHubOAuthCallback,
   createGitHubOAuthStart,
   getPublicPortfolioBySlug,
+  issuePortfolioCredentialsFromEvidence,
   seedPortfolioDemoData,
+  syncGitHubAccount,
   upsertUserProfile,
   verifyPortfolioCredential
 } from "./modules/portfolio/service";
@@ -60,6 +62,15 @@ export async function buildApp() {
     res.json(portfolio.credentials);
   });
 
+  app.post("/api/portfolio/:userId/credentials/issue", async (req, res) => {
+    try {
+      const issued = await issuePortfolioCredentialsFromEvidence(db, issuer, { userId: req.params.userId, ...req.body });
+      res.json(issued);
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
   app.get("/api/verify/:jti", async (req, res) => {
     const result = await verifyPortfolioCredential(db, req.params.jti, String(req.get("user-agent") ?? "public-recruiter"));
     if (!result.ok) return res.status(404).json(result);
@@ -72,11 +83,23 @@ export async function buildApp() {
     res.json(createGitHubOAuthStart(db, config, userId));
   });
 
-  app.get("/api/github/oauth/callback", (req, res) => {
-    res.json(completeGitHubOAuthCallback(db, config, {
-      code: typeof req.query.code === "string" ? req.query.code : undefined,
-      state: typeof req.query.state === "string" ? req.query.state : undefined
-    }));
+  app.get("/api/github/oauth/callback", async (req, res) => {
+    try {
+      res.json(await completeGitHubOAuthCallback(db, config, {
+        code: typeof req.query.code === "string" ? req.query.code : undefined,
+        state: typeof req.query.state === "string" ? req.query.state : undefined
+      }));
+    } catch (error: any) {
+      res.status(400).json({ ok: false, error: String(error?.message ?? error) });
+    }
+  });
+
+  app.post("/api/github/sync/:userId", async (req, res) => {
+    try {
+      res.json(await syncGitHubAccount(db, config, req.params.userId));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
   });
 
   app.post("/api/issuer/credentials", async (req, res) => {
