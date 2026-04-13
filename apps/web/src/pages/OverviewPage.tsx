@@ -1,12 +1,56 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useSummary } from "../hooks/useSummary";
+
+type ProjectDraft = {
+  name: string;
+  description: string;
+  repoUrl: string;
+  liveUrl: string;
+  highlightsText: string;
+  featured: boolean;
+};
+
+function toProjectDraft(project: any): ProjectDraft {
+  return {
+    name: project?.name ?? "",
+    description: project?.description ?? "",
+    repoUrl: project?.repo_url ?? "",
+    liveUrl: project?.live_url ?? "",
+    highlightsText: Array.isArray(project?.highlights) ? project.highlights.join("\n") : "",
+    featured: Boolean(project?.featured)
+  };
+}
 
 export function OverviewPage() {
   const { data, error, refresh } = useSummary();
   const portfolio = data?.portfolio;
   const firstCredential = portfolio?.credentials?.[0];
   const userId = portfolio?.profile?.id;
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [profileForm, setProfileForm] = useState({ displayName: "", headline: "", location: "", portfolioSlug: "", bio: "" });
+  const [projects, setProjects] = useState<ProjectDraft[]>([]);
+
+  useEffect(() => {
+    if (!portfolio?.profile) return;
+    setProfileForm({
+      displayName: portfolio.profile.display_name ?? "",
+      headline: portfolio.profile.headline ?? "",
+      location: portfolio.profile.location ?? "",
+      portfolioSlug: portfolio.profile.portfolio_slug ?? "",
+      bio: portfolio.profile.bio ?? ""
+    });
+    setProjects((portfolio.projects ?? []).map(toProjectDraft));
+  }, [portfolio]);
+
+  const stats = useMemo(() => ({
+    repositories: portfolio?.repositories?.length ?? 0,
+    projects: portfolio?.projects?.length ?? 0,
+    credentials: portfolio?.credentials?.length ?? 0,
+    verifications: portfolio?.verificationLogs?.length ?? 0
+  }), [portfolio]);
 
   const startGitHubOAuth = async () => {
     if (!userId) return;
@@ -29,42 +73,134 @@ export function OverviewPage() {
     await refresh();
   };
 
+  const saveDashboard = async () => {
+    if (!userId) return;
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      await api(`/api/portfolio/users/${userId}`, {
+        method: "PATCH",
+        body: JSON.stringify(profileForm)
+      });
+      await api(`/api/portfolio/users/${userId}/projects`, {
+        method: "PUT",
+        body: JSON.stringify({
+          projects: projects
+            .filter((project) => project.name.trim())
+            .map((project, index) => ({
+              name: project.name.trim(),
+              description: project.description.trim(),
+              repoUrl: project.repoUrl.trim(),
+              liveUrl: project.liveUrl.trim(),
+              featured: project.featured,
+              sortOrder: index + 1,
+              highlights: project.highlightsText
+                .split(/\r?\n/)
+                .map((item) => item.trim())
+                .filter(Boolean)
+            }))
+        })
+      });
+      await refresh();
+      setSaveMessage("Portfolio dashboard saved.");
+    } catch (e: any) {
+      setSaveMessage(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateProject = (index: number, patch: Partial<ProjectDraft>) => {
+    setProjects((current) => current.map((project, projectIndex) => projectIndex === index ? { ...project, ...patch } : project));
+  };
+
+  const addProject = () => setProjects((current) => [...current, toProjectDraft(null)]);
+  const removeProject = (index: number) => setProjects((current) => current.filter((_, projectIndex) => projectIndex !== index));
+
   return (
     <div style={{ display: "grid", gap: 24 }}>
-      <section style={{ padding: 20, border: "1px solid #24324f", borderRadius: 16, background: "#111830" }}>
-        <h2 style={{ marginTop: 0 }}>Verifiable developer portfolio dashboard</h2>
-        <p>
-          This MVP now supports GitHub OAuth bootstrap, GitHub API sync for profile and repositories, persisted portfolio evidence, and issuance of the two portfolio VC types.
+      <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "linear-gradient(135deg, #111830 0%, #16213d 100%)" }}>
+        <p style={{ margin: 0, color: "#93c5fd", fontSize: 13, letterSpacing: 1.2, textTransform: "uppercase" }}>Portfolio-first MVP</p>
+        <h2 style={{ marginBottom: 12 }}>Verifiable developer portfolio dashboard</h2>
+        <p style={{ maxWidth: 900, color: "#cbd5e1" }}>
+          Edit your public bio, featured projects, and highlights here. Then sync GitHub evidence and issue recruiter-ready credentials that can be verified without trusting your database.
         </p>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <button onClick={refresh}>Refresh API summary</button>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 20 }}>
+          {Object.entries(stats).map(([label, value]) => (
+            <div key={label} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 20 }}>
+          <button onClick={refresh}>Refresh summary</button>
           {userId ? <button onClick={() => void startGitHubOAuth()}>Connect GitHub</button> : null}
           {userId ? <button onClick={() => void syncGitHub()}>Sync GitHub evidence</button> : null}
           {userId ? <button onClick={() => void issuePortfolioCredentials()}>Issue portfolio credentials</button> : null}
-          <Link to="/portfolio/sjw-dev">Open demo portfolio</Link>
+          <Link to="/portfolio/sjw-dev">Open public portfolio</Link>
           {firstCredential ? <Link to={`/verify/${firstCredential.credential_jti}`}>Open recruiter verification</Link> : null}
         </div>
       </section>
 
-      <section style={{ padding: 20, border: "1px solid #24324f", borderRadius: 16, background: "#111830" }}>
-        <h3 style={{ marginTop: 0 }}>Live summary</h3>
+      <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "#111830" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <h3 style={{ margin: 0 }}>Edit public profile</h3>
+            <p style={{ color: "#94a3b8" }}>Bio, headline, slug, and featured projects shown to recruiters.</p>
+          </div>
+          <button disabled={saving || !userId} onClick={() => void saveDashboard()}>{saving ? "Saving…" : "Save dashboard"}</button>
+        </div>
+        {saveMessage ? <p style={{ color: saveMessage.includes("saved") ? "#86efac" : "#fca5a5" }}>{saveMessage}</p> : null}
         {error ? <p style={{ color: "#fca5a5" }}>{error}</p> : null}
-        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(data, null, 2)}</pre>
+        <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+          <input value={profileForm.displayName} onChange={(event) => setProfileForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Display name" />
+          <input value={profileForm.headline} onChange={(event) => setProfileForm((current) => ({ ...current, headline: event.target.value }))} placeholder="Headline" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <input value={profileForm.location} onChange={(event) => setProfileForm((current) => ({ ...current, location: event.target.value }))} placeholder="Location" />
+            <input value={profileForm.portfolioSlug} onChange={(event) => setProfileForm((current) => ({ ...current, portfolioSlug: event.target.value }))} placeholder="Portfolio slug" />
+          </div>
+          <textarea rows={5} value={profileForm.bio} onChange={(event) => setProfileForm((current) => ({ ...current, bio: event.target.value }))} placeholder="Short recruiter-facing bio" />
+        </div>
       </section>
 
-      {portfolio ? (
-        <section style={{ padding: 20, border: "1px solid #24324f", borderRadius: 16, background: "#111830" }}>
-          <h3 style={{ marginTop: 0 }}>Demo portfolio snapshot</h3>
-          <p><strong>{portfolio.profile.display_name}</strong> · {portfolio.profile.headline}</p>
-          <p>{portfolio.profile.bio}</p>
-          <ul>
-            <li>GitHub: {portfolio.github?.username ?? "not linked"}</li>
-            <li>Repositories synced: {portfolio.repositories?.length ?? 0}</li>
-            <li>Projects: {portfolio.projects?.length ?? 0}</li>
-            <li>Credentials: {portfolio.credentials?.length ?? 0}</li>
-          </ul>
-        </section>
-      ) : null}
+      <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "#111830" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <h3 style={{ margin: 0 }}>Featured projects and highlights</h3>
+            <p style={{ color: "#94a3b8" }}>Curate the story first; raw repositories are supporting evidence.</p>
+          </div>
+          <button onClick={addProject}>Add project</button>
+        </div>
+        <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+          {projects.map((project, index) => (
+            <div key={`${project.name}-${index}`} style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                <strong>Project {index + 1}</strong>
+                <button onClick={() => removeProject(index)}>Remove</button>
+              </div>
+              <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+                <input value={project.name} onChange={(event) => updateProject(index, { name: event.target.value })} placeholder="Project name" />
+                <textarea rows={3} value={project.description} onChange={(event) => updateProject(index, { description: event.target.value })} placeholder="What this project proves" />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                  <input value={project.repoUrl} onChange={(event) => updateProject(index, { repoUrl: event.target.value })} placeholder="Repository URL" />
+                  <input value={project.liveUrl} onChange={(event) => updateProject(index, { liveUrl: event.target.value })} placeholder="Live/demo URL" />
+                </div>
+                <textarea rows={4} value={project.highlightsText} onChange={(event) => updateProject(index, { highlightsText: event.target.value })} placeholder="One highlight per line" />
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input type="checkbox" checked={project.featured} onChange={(event) => updateProject(index, { featured: event.target.checked })} />
+                  Mark as featured
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: 20, border: "1px solid #24324f", borderRadius: 16, background: "#111830" }}>
+        <h3 style={{ marginTop: 0 }}>Live API summary</h3>
+        <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(data, null, 2)}</pre>
+      </section>
     </div>
   );
 }

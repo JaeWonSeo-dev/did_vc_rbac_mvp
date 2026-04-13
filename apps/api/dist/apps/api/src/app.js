@@ -9,7 +9,7 @@ import { issueCredential, listCredentials, updateCredentialStatus } from "./modu
 import { createWallet, importWalletCredential, listWalletCredentials, listWallets, createPresentation } from "./modules/wallet/service";
 import { createAuthRequest, deleteSession, issueSession, recordFailure, verifyDirectPost } from "./modules/verifier/service";
 import { listAudit } from "./modules/audit/service";
-import { completeGitHubOAuthCallback, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, seedPortfolioDemoData, syncGitHubAccount, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
+import { completeGitHubOAuthCallback, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, replacePortfolioProjects, seedPortfolioDemoData, syncGitHubAccount, updatePortfolioProfile, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
 import { requiredRoleForPath } from "@did-vc-rbac/shared";
 export async function buildApp() {
     const db = createDb(config.databasePath);
@@ -35,6 +35,22 @@ export async function buildApp() {
     app.post("/api/portfolio/users", (req, res) => {
         const user = upsertUserProfile(db, req.body);
         res.json(user);
+    });
+    app.patch("/api/portfolio/users/:userId", (req, res) => {
+        try {
+            res.json(updatePortfolioProfile(db, req.params.userId, req.body ?? {}));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.put("/api/portfolio/users/:userId/projects", (req, res) => {
+        try {
+            res.json(replacePortfolioProjects(db, req.params.userId, Array.isArray(req.body?.projects) ? req.body.projects : []));
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
     });
     app.get("/api/portfolio/:slug", (req, res) => {
         const portfolio = getPublicPortfolioBySlug(db, req.params.slug);

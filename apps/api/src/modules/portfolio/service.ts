@@ -163,8 +163,56 @@ export function saveProject(db: any, userId: string, project: {
   sortOrder?: number;
 }) {
   db.prepare(`INSERT INTO portfolio_projects(user_id, name, description, repo_url, live_url, highlights_json, featured, sort_order)
-    VALUES(?, ?, ?, ?, ?, ?, ?, ?)`)
+    VALUES(?, ?, ?, ?, ?, ?, ?, ?)`) 
     .run(userId, project.name, project.description ?? null, project.repoUrl ?? null, project.liveUrl ?? null, JSON.stringify(project.highlights ?? []), project.featured ? 1 : 0, project.sortOrder ?? 0);
+}
+
+export function replacePortfolioProjects(db: any, userId: string, projects: Array<{
+  name: string;
+  description?: string;
+  repoUrl?: string;
+  liveUrl?: string;
+  highlights?: string[];
+  featured?: boolean;
+  sortOrder?: number;
+}>) {
+  db.prepare("DELETE FROM portfolio_projects WHERE user_id = ?").run(userId);
+  for (const [index, project] of projects.entries()) {
+    saveProject(db, userId, {
+      ...project,
+      sortOrder: project.sortOrder ?? index + 1
+    });
+  }
+  return db.prepare("SELECT * FROM portfolio_projects WHERE user_id = ? ORDER BY featured DESC, sort_order ASC, id ASC").all(userId)
+    .map((project: any) => ({ ...project, highlights: JSON.parse(project.highlights_json ?? "[]") }));
+}
+
+export function updatePortfolioProfile(db: any, userId: string, input: {
+  displayName?: string;
+  headline?: string;
+  bio?: string;
+  location?: string;
+  avatarUrl?: string;
+  portfolioSlug?: string;
+}) {
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
+  if (!user) throw new Error("user not found");
+  const timestamp = nowMillis();
+  const nextSlug = input.portfolioSlug ? slugify(input.portfolioSlug) : user.portfolio_slug;
+  db.prepare(`UPDATE users
+    SET display_name = ?, headline = ?, bio = ?, location = ?, avatar_url = ?, portfolio_slug = ?, updated_at = ?
+    WHERE id = ?`)
+    .run(
+      input.displayName ?? user.display_name,
+      input.headline ?? user.headline,
+      input.bio ?? user.bio,
+      input.location ?? user.location,
+      input.avatarUrl ?? user.avatar_url,
+      nextSlug,
+      timestamp,
+      userId
+    );
+  return db.prepare("SELECT * FROM users WHERE id = ?").get(userId);
 }
 
 export async function issueGitHubAccountOwnershipCredential(db: any, issuer: { did: string; privateJwk: JsonWebKey }, input: {

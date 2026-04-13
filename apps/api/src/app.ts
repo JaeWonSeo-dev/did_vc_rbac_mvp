@@ -14,8 +14,10 @@ import {
   createGitHubOAuthStart,
   getPublicPortfolioBySlug,
   issuePortfolioCredentialsFromEvidence,
+  replacePortfolioProjects,
   seedPortfolioDemoData,
   syncGitHubAccount,
+  updatePortfolioProfile,
   upsertUserProfile,
   verifyPortfolioCredential
 } from "./modules/portfolio/service";
@@ -48,6 +50,22 @@ export async function buildApp() {
   app.post("/api/portfolio/users", (req, res) => {
     const user = upsertUserProfile(db, req.body);
     res.json(user);
+  });
+
+  app.patch("/api/portfolio/users/:userId", (req, res) => {
+    try {
+      res.json(updatePortfolioProfile(db, req.params.userId, req.body ?? {}));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.put("/api/portfolio/users/:userId/projects", (req, res) => {
+    try {
+      res.json(replacePortfolioProjects(db, req.params.userId, Array.isArray(req.body?.projects) ? req.body.projects : []));
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
   });
 
   app.get("/api/portfolio/:slug", (req, res) => {
