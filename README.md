@@ -122,4 +122,4 @@ npm --workspace @did-vc-rbac/web run test
 - deployment docs for a shareable online demo
 
 ## Legacy note
-The original admin-console RBAC demo is still available under legacy routes (`/issuer`, `/wallet`, `/verifier`, `/admin`, `/audit`, `/dev`). It is no longer the primary story of the product.
+The original admin-console RBAC demo is still available under legacy routes (`/issuer`, `/wallet`, `/verifier`, `/admin`, `/audit`, `/dev`). In the current web UI, these are intentionally grouped under a separate `Legacy Tools` route so the portfolio product remains the primary story.

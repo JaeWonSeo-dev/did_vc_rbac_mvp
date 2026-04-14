@@ -10,6 +10,7 @@ import { ProtectedPage } from "./pages/ProtectedPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { VerifyCredentialPage } from "./pages/VerifyCredentialPage";
 import { GitHubCallbackPage } from "./pages/GitHubCallbackPage";
+import { LegacyToolsPage } from "./pages/LegacyToolsPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -20,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="portfolio/:slug" element={<PortfolioPage />} />
           <Route path="verify/:jti" element={<VerifyCredentialPage />} />
           <Route path="github/callback" element={<GitHubCallbackPage />} />
+          <Route path="legacy" element={<LegacyToolsPage />} />
           <Route path="issuer" element={<IssuerPage />} />
           <Route path="wallet" element={<WalletPage />} />
           <Route path="verifier" element={<VerifierPage />} />
