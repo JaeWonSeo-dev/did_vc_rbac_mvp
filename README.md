@@ -48,6 +48,7 @@ docs/
   architecture.md
   portfolio-gap-analysis.md
   portfolio-p0-implementation-plan.md
+  setup-and-demo.md
   threat-model.md
 ```
 
@@ -81,6 +82,8 @@ npm install
 npm run seed
 npm run dev
 ```
+
+For GitHub OAuth setup, demo order, and share-ready validation steps, see `docs/setup-and-demo.md`.
 
 Endpoints:
 - Web: <http://localhost:5173>
