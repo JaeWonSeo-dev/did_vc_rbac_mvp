@@ -65,9 +65,10 @@ This repo seeds a local demo portfolio automatically.
 ### A. Developer story
 1. Open the dashboard.
 2. Explain that the product is a **verifiable developer portfolio**, not just a GitHub stats page.
-3. Show profile editing, featured projects, and manual achievements.
-4. Trigger GitHub connect or describe the seeded GitHub evidence if live OAuth is not configured.
-5. Submit a credential request.
+3. Use the onboarding checklist to show the end-to-end path: profile → GitHub sync → evidence → request review → issue credential → verify.
+4. Show profile editing, featured projects, and manual achievements.
+5. Trigger GitHub connect or describe the seeded GitHub evidence if live OAuth is not configured.
+6. Submit a credential request.
 
 ### B. Issuer/admin story
 1. Scroll to the review queue.

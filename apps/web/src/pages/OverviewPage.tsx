@@ -116,6 +116,48 @@ export function OverviewPage() {
     verifications: portfolio?.verificationLogs?.length ?? 0
   }), [portfolio, requests]);
 
+  const onboardingSteps = useMemo(() => {
+    const profileReady = Boolean(portfolio?.profile?.display_name && portfolio?.profile?.headline && portfolio?.profile?.bio);
+    const githubReady = (portfolio?.repositories?.length ?? 0) > 0;
+    const evidenceReady = (portfolio?.projects?.length ?? 0) > 0 || (portfolio?.achievements?.length ?? 0) > 0;
+    const requestReady = requests.length > 0;
+    const credentialReady = (portfolio?.credentials?.length ?? 0) > 0;
+    const verificationReady = (portfolio?.verificationLogs?.length ?? 0) > 0;
+
+    return [
+      {
+        title: "Complete profile story",
+        done: profileReady,
+        hint: "Add name, headline, location, slug, and a recruiter-facing bio."
+      },
+      {
+        title: "Connect and sync GitHub",
+        done: githubReady,
+        hint: "Link GitHub OAuth and pull repository evidence into the portfolio."
+      },
+      {
+        title: "Add portfolio evidence",
+        done: evidenceReady,
+        hint: "Feature projects, awards, completions, and manual achievements so the portfolio tells a story beyond GitHub stats."
+      },
+      {
+        title: "Request issuer review",
+        done: requestReady,
+        hint: "Submit a credential request so reviewed evidence can become signed proof."
+      },
+      {
+        title: "Issue credentials",
+        done: credentialReady,
+        hint: "Make sure at least one verifiable credential exists for public sharing."
+      },
+      {
+        title: "Validate recruiter flow",
+        done: verificationReady,
+        hint: "Open a verification link and confirm a recruiter-visible verification event is recorded."
+      }
+    ];
+  }, [portfolio, requests]);
+
   const startGitHubOAuth = async () => {
     if (!userId) return;
     const result = await api<{ authorizeUrl: string }>("/api/github/oauth/start", {
@@ -297,6 +339,27 @@ export function OverviewPage() {
           {userId ? <button onClick={() => void issuePortfolioCredentials()}>Issue portfolio credentials</button> : null}
           <Link to="/portfolio/sjw-dev">Open public portfolio</Link>
           {firstCredential ? <Link to={`/verify/${firstCredential.credential_jti}`}>Open recruiter verification</Link> : null}
+        </div>
+      </section>
+
+      <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "#111830" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <h3 style={{ margin: 0 }}>Suggested onboarding path</h3>
+            <p style={{ color: "#94a3b8" }}>A quick checklist for getting from an empty profile to recruiter-verifiable proof.</p>
+          </div>
+          <div style={{ color: "#94a3b8" }}>{onboardingSteps.filter((step) => step.done).length} / {onboardingSteps.length} done</div>
+        </div>
+        <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+          {onboardingSteps.map((step, index) => (
+            <div key={step.title} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: `1px solid ${step.done ? "#166534" : "#24324f"}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <strong>{index + 1}. {step.title}</strong>
+                <span style={{ color: step.done ? "#4ade80" : "#fbbf24", fontWeight: 700 }}>{step.done ? "Done" : "Next"}</span>
+              </div>
+              <p style={{ marginBottom: 0, color: "#94a3b8" }}>{step.hint}</p>
+            </div>
+          ))}
         </div>
       </section>
 
