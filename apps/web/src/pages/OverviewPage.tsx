@@ -235,6 +235,20 @@ export function OverviewPage() {
   const addAchievement = () => setAchievements((current) => [...current, toAchievementDraft(null)]);
   const removeAchievement = (index: number) => setAchievements((current) => current.filter((_, achievementIndex) => achievementIndex !== index));
 
+  const updateCredentialStatus = async (credentialJti: string, status: "active" | "suspended" | "revoked") => {
+    setReviewMessage(null);
+    try {
+      await api(`/api/admin/portfolio/credentials/${credentialJti}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status })
+      });
+      await refresh();
+      setReviewMessage(`Credential moved to ${status}.`);
+    } catch (e: any) {
+      setReviewMessage(e.message);
+    }
+  };
+
   return (
     <div style={{ display: "grid", gap: 24 }}>
       <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "linear-gradient(135deg, #111830 0%, #16213d 100%)" }}>
@@ -399,6 +413,28 @@ export function OverviewPage() {
                   <button onClick={() => void reviewRequest(request.id, "reject")}>Reject</button>
                 </div>
               ) : null}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "#111830" }}>
+        <h3 style={{ marginTop: 0 }}>Issued credentials and registry controls</h3>
+        <p style={{ color: "#94a3b8" }}>Admin-side status controls for the recruiter verification page: active, suspended, or revoked.</p>
+        <div style={{ display: "grid", gap: 14 }}>
+          {(portfolio?.credentials ?? []).map((credential: any) => (
+            <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                <strong>{credential.credential_type}</strong>
+                <span style={{ color: credential.status === "active" ? "#4ade80" : credential.status === "revoked" ? "#fca5a5" : "#fbbf24" }}>{credential.status}</span>
+              </div>
+              <pre style={{ whiteSpace: "pre-wrap", marginBottom: 12 }}>{JSON.stringify(credential.summary, null, 2)}</pre>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <Link to={`/verify/${credential.credential_jti}`}>Open verification page</Link>
+                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "active")}>Mark active</button>
+                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "suspended")}>Suspend</button>
+                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "revoked")}>Revoke</button>
+              </div>
             </div>
           ))}
         </div>

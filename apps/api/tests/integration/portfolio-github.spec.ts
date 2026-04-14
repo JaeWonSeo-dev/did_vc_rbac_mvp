@@ -201,6 +201,19 @@ describe("portfolio github flow", () => {
     ]));
     expect(portfolio.body.github.contributionSummary.totalEstimatedCommits).toBeGreaterThanOrEqual(19);
     expect(portfolio.body.repositories[0].summary.proofPoints.length).toBeGreaterThan(0);
+
+    const contributionCredential = portfolio.body.credentials.find((item: any) => item.credential_type === "GitHubContributionCredential");
+    expect(contributionCredential).toBeTruthy();
+    expect(contributionCredential.credential_jti).toBeTruthy();
+
+    await request(app)
+      .post(`/api/admin/portfolio/credentials/${contributionCredential.credential_jti}/status`)
+      .send({ status: "suspended" })
+      .expect(200);
+
+    const updatedPortfolio = await request(app).get("/api/portfolio/octo-dev").expect(200);
+    const suspendedCredential = updatedPortfolio.body.credentials.find((item: any) => item.credential_jti === contributionCredential.credential_jti);
+    expect(suspendedCredential.status).toBe("suspended");
   });
 });
 

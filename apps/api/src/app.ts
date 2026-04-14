@@ -22,6 +22,7 @@ import {
   replacePortfolioProjects,
   seedPortfolioDemoData,
   syncGitHubAccount,
+  updatePortfolioCredentialStatus,
   updatePortfolioProfile,
   upsertUserProfile,
   verifyPortfolioCredential
@@ -130,6 +131,18 @@ export async function buildApp() {
     try {
       const issued = await issuePortfolioCredentialsFromEvidence(db, issuer, { userId: req.params.userId, ...req.body });
       res.json(issued);
+    } catch (error: any) {
+      res.status(400).json({ error: String(error?.message ?? error) });
+    }
+  });
+
+  app.post("/api/admin/portfolio/credentials/:jti/status", (req, res) => {
+    try {
+      const status = String(req.body?.status ?? "");
+      if (!["active", "suspended", "revoked"].includes(status)) {
+        return res.status(400).json({ error: "invalid status" });
+      }
+      res.json(updatePortfolioCredentialStatus(db, req.params.jti, status as "active" | "suspended" | "revoked"));
     } catch (error: any) {
       res.status(400).json({ error: String(error?.message ?? error) });
     }

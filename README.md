@@ -28,6 +28,7 @@ The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legac
   - `GitHubContributionCredential`
   - `PortfolioAchievementCredential`
 - VC verification with issuer, subject, status, status meaning, and expiry shown in the UI
+- admin-side registry controls to mark portfolio credentials as active, suspended, or revoked and immediately reflect that on recruiter verification pages
 
 ### Still intentionally simplified
 - GitHub contribution counts are still MVP-practical and partly heuristic; they are stronger than before, but not yet a full commit graph / PR event ingestion pipeline

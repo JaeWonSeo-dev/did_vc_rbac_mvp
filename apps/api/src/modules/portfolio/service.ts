@@ -515,6 +515,13 @@ export function listPortfolioCredentials(db: any, userId: string) {
   return db.prepare("SELECT * FROM portfolio_credentials WHERE user_id = ? ORDER BY issued_at DESC").all(userId);
 }
 
+export function updatePortfolioCredentialStatus(db: any, credentialJti: string, status: "active" | "suspended" | "revoked") {
+  const credential = db.prepare("SELECT * FROM portfolio_credentials WHERE credential_jti = ?").get(credentialJti);
+  if (!credential) throw new Error("portfolio credential not found");
+  db.prepare("UPDATE portfolio_credentials SET status = ? WHERE credential_jti = ?").run(status, credentialJti);
+  return db.prepare("SELECT * FROM portfolio_credentials WHERE credential_jti = ?").get(credentialJti);
+}
+
 function upsertGitHubSync(db: any, userId: string, sync: Awaited<ReturnType<typeof fetchGitHubPortfolioData>>, accessToken: string, scope: string) {
   const timestamp = nowMillis();
   db.prepare(`INSERT INTO github_accounts(user_id, github_user_id, username, profile_url, access_token, scope, status, linked_at, updated_at, profile_json, contribution_summary_json)
