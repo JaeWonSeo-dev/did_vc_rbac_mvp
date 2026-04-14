@@ -37,8 +37,11 @@ function buildOwnershipNarrative(input: { githubUsername: string; githubProfileU
   return `The issuer verified that this DID is linked to the GitHub account @${input.githubUsername} (${input.githubProfileUrl}).`;
 }
 
-function buildContributionNarrative(input: { repository: string; role: string; commitCount: number; mergedPrCount: number; periodStart: string; periodEnd: string; evidenceSummary: string }) {
-  return `The issuer reviewed evidence showing ${input.role} activity on ${input.repository} between ${input.periodStart} and ${input.periodEnd}, including ${input.commitCount} observed contributions and ${input.mergedPrCount} merged PRs. ${input.evidenceSummary}`;
+function buildContributionNarrative(input: { repository: string; role: string; commitCount: number; mergedPrCount: number; periodStart: string; periodEnd: string; evidenceSummary: string; pullRequestCount?: number; contributorCount?: number; confidence?: string }) {
+  const prPart = typeof input.pullRequestCount === "number" ? ` ${input.pullRequestCount} closed PRs were inspected during the sync window.` : "";
+  const contributorPart = typeof input.contributorCount === "number" ? ` Repository analysis observed ${input.contributorCount} contributors.` : "";
+  const confidencePart = input.confidence ? ` Evidence confidence is currently marked ${input.confidence}.` : "";
+  return `The issuer reviewed evidence showing ${input.role} activity on ${input.repository} between ${input.periodStart} and ${input.periodEnd}, including ${input.commitCount} observed contributions and ${input.mergedPrCount} merged PRs.${prPart}${contributorPart}${confidencePart} ${input.evidenceSummary}`;
 }
 
 function buildAchievementNarrative(input: { title: string; category: string; issuerName?: string; issuedOn?: string; evidenceSummary: string }) {
@@ -170,8 +173,8 @@ async function fetchGitHubPortfolioData(config: any, accessToken: string) {
     const signals = await fetchRepoContributionSignals(apiBase, accessToken, repo);
     const contributionRole = repo.owner?.login === profile.login ? "owner" : "contributor";
     const proofSummary = contributionRole === "owner"
-      ? `Owns ${repo.full_name}; ${signals.commitCount} observed contributions and ${signals.mergedPrCount} merged PRs across the latest sync window.`
-      : `Contributes to ${repo.full_name}; ${signals.commitCount} observed contributions and ${signals.mergedPrCount} merged PRs across the latest sync window.`;
+      ? `Owns ${repo.full_name}; ${signals.commitCount} observed contributions, ${signals.mergedPrCount} merged PRs, ${signals.pullRequestCount} inspected closed PRs, and ${signals.contributorCount} observed contributors across the latest sync window.`
+      : `Contributes to ${repo.full_name}; ${signals.commitCount} observed contributions, ${signals.mergedPrCount} merged PRs, ${signals.pullRequestCount} inspected closed PRs, and ${signals.contributorCount} observed contributors across the latest sync window.`;
 
     enrichedTopRepos.push({
       githubRepoId: String(repo.id),
@@ -214,8 +217,10 @@ async function fetchGitHubPortfolioData(config: any, accessToken: string) {
     following: Number(profile.following ?? 0),
     totalEstimatedCommits: enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedContributionCount, 0),
     totalEstimatedMergedPrs: enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedMergedPrCount, 0),
+    totalInspectedClosedPrs: enrichedTopRepos.reduce((sum, repo) => sum + repo.pullRequestCount, 0),
+    totalObservedContributors: enrichedTopRepos.reduce((sum, repo) => sum + repo.contributorCount, 0),
     evidenceNarrative: enrichedTopRepos.length
-      ? `Observed ${enrichedTopRepos.length} high-signal repositories, ${enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedContributionCount, 0)} contribution events, and ${enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedMergedPrCount, 0)} merged PRs in the latest 90-day sync window.`
+      ? `Observed ${enrichedTopRepos.length} high-signal repositories, ${enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedContributionCount, 0)} contribution events, ${enrichedTopRepos.reduce((sum, repo) => sum + repo.estimatedMergedPrCount, 0)} merged PRs, and ${enrichedTopRepos.reduce((sum, repo) => sum + repo.pullRequestCount, 0)} inspected closed PRs in the latest 90-day sync window.`
       : "No repository evidence synced yet."
   };
 
@@ -413,6 +418,9 @@ export async function issueGitHubContributionCredential(db: any, issuer: { did: 
   periodStart: string;
   periodEnd: string;
   evidenceSummary: string;
+  pullRequestCount?: number;
+  contributorCount?: number;
+  confidence?: string;
   expiresInSeconds?: number;
 }) {
   const existing = db.prepare("SELECT credential_jti FROM portfolio_credentials WHERE user_id = ? AND credential_type = ? AND json_extract(summary_json, '$.repository') = ? ORDER BY created_at DESC LIMIT 1").get(input.userId, "GitHubContributionCredential", input.repository);
@@ -453,7 +461,7 @@ export async function issueGitHubContributionCredential(db: any, issuer: { did: 
   const timestamp = nowMillis();
   db.prepare(`INSERT INTO portfolio_credentials(credential_jti, user_id, credential_type, vc_jwt, summary_json, status, issued_at, expires_at, created_at)
     VALUES(?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
-    .run(jti, input.userId, "GitHubContributionCredential", vcJwt, JSON.stringify({ title: `${input.repository} contribution verified`, repository: input.repository, repositoryUrl: input.repositoryUrl, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary, narrative: buildContributionNarrative({ repository: input.repository, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary }) }), iat, exp, timestamp);
+    .run(jti, input.userId, "GitHubContributionCredential", vcJwt, JSON.stringify({ title: `${input.repository} contribution verified`, repository: input.repository, repositoryUrl: input.repositoryUrl, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary, pullRequestCount: input.pullRequestCount, contributorCount: input.contributorCount, confidence: input.confidence, narrative: buildContributionNarrative({ repository: input.repository, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary, pullRequestCount: input.pullRequestCount, contributorCount: input.contributorCount, confidence: input.confidence }) }), iat, exp, timestamp);
   return { claims, vcJwt, credentialJti: jti };
 }
 
@@ -840,7 +848,10 @@ export async function issuePortfolioCredentialsFromEvidence(db: any, issuer: { d
     mergedPrCount: input.mergedPrCount ?? repo.estimated_merged_pr_count ?? 0,
     periodStart: input.periodStart ?? repoSummary.activityWindow?.start ?? isoDateDaysAgo(90),
     periodEnd: input.periodEnd ?? repoSummary.activityWindow?.end ?? new Date().toISOString().slice(0, 10),
-    evidenceSummary: input.evidenceSummary ?? repoSummary.proofSummary ?? `Synced GitHub evidence for ${github.username} on ${repo.full_name}.`
+    evidenceSummary: input.evidenceSummary ?? repoSummary.proofSummary ?? `Synced GitHub evidence for ${github.username} on ${repo.full_name}.`,
+    pullRequestCount: repoSummary.pullRequestCount,
+    contributorCount: repoSummary.contributorCount,
+    confidence: repoSummary.confidence
   });
 
   return {

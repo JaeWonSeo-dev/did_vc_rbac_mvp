@@ -200,7 +200,9 @@ describe("portfolio github flow", () => {
       "PortfolioAchievementCredential"
     ]));
     expect(portfolio.body.github.contributionSummary.totalEstimatedCommits).toBeGreaterThanOrEqual(19);
+    expect(portfolio.body.github.contributionSummary.totalInspectedClosedPrs).toBeGreaterThanOrEqual(4);
     expect(portfolio.body.repositories[0].summary.proofPoints.length).toBeGreaterThan(0);
+    expect(String(portfolio.body.repositories[0].summary.proofSummary)).toMatch(/inspected closed PRs/i);
 
     const contributionCredential = portfolio.body.credentials.find((item: any) => item.credential_type === "GitHubContributionCredential");
     expect(contributionCredential).toBeTruthy();

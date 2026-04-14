@@ -130,6 +130,8 @@ export function PortfolioPage() {
                 <li>Stars: {repo.stargazers_count}</li>
                 <li>Observed contributions: {repo.estimated_contribution_count}</li>
                 <li>Observed merged PRs: {repo.estimated_merged_pr_count}</li>
+                <li>Inspected closed PRs: {repo.summary?.pullRequestCount ?? "n/a"}</li>
+                <li>Observed contributors: {repo.summary?.contributorCount ?? "n/a"}</li>
                 <li>Evidence confidence: {repo.summary?.confidence || "heuristic"}</li>
                 <li>Activity window: {repo.summary?.activityWindow?.start || "n/a"} → {repo.summary?.activityWindow?.end || "n/a"}</li>
               </ul>
