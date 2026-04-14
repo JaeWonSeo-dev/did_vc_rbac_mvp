@@ -9,6 +9,11 @@ function statusBadge(status: string) {
   return { color: "#cbd5e1", label: status };
 }
 
+function summaryItem(label: string, value: any) {
+  if (value === undefined || value === null || value === "") return null;
+  return <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>{label}:</strong> {String(value)}</div>;
+}
+
 export function PortfolioPage() {
   const { slug = "sjw-dev" } = useParams();
   const [data, setData] = useState<any>(null);
@@ -167,7 +172,10 @@ export function PortfolioPage() {
             return (
               <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: `1px solid ${badge.color}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                  <strong>{credential.credential_type}</strong>
+                  <div>
+                    <strong>{credential.credential_type}</strong>
+                    {credential.summary?.title ? <div style={{ color: "#93c5fd", marginTop: 6 }}>{credential.summary.title}</div> : null}
+                  </div>
                   <span style={{ color: badge.color, fontWeight: 700 }}>{badge.label}</span>
                 </div>
                 {credential.status !== "active" ? (
@@ -178,8 +186,22 @@ export function PortfolioPage() {
                   </p>
                 ) : null}
                 {credential.summary?.narrative ? <p style={{ color: "#e2e8f0" }}>{credential.summary.narrative}</p> : null}
-                <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
-                <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 12 }}>
+                  {summaryItem("Repository", credential.summary?.repository)}
+                  {summaryItem("Role", credential.summary?.role)}
+                  {summaryItem("Commits", credential.summary?.commitCount)}
+                  {summaryItem("Merged PRs", credential.summary?.mergedPrCount)}
+                  {summaryItem("Category", credential.summary?.category)}
+                  {summaryItem("Issuer", credential.summary?.issuerName)}
+                  {summaryItem("Issued on", credential.summary?.issuedOn)}
+                </div>
+                <details>
+                  <summary style={{ cursor: "pointer", color: "#94a3b8" }}>Show raw summary JSON</summary>
+                  <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
+                </details>
+                <div style={{ marginTop: 12 }}>
+                  <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>
+                </div>
               </div>
             );
           })}
