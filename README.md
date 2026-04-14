@@ -101,6 +101,13 @@ npm --workspace @did-vc-rbac/shared run test
 npm --workspace @did-vc-rbac/web run test
 ```
 
+## Docs
+- setup and demo guide: `docs/setup-and-demo.md`
+- architecture notes: `docs/architecture.md`
+- gap analysis: `docs/portfolio-gap-analysis.md`
+- implementation plan: `docs/portfolio-p0-implementation-plan.md`
+- threat model: `docs/threat-model.md`
+
 ## Current architecture notes
 - **Frontend**: React + Vite, portfolio-first layout, local issuer/admin review panel, legacy RBAC tools behind a collapsed section
 - **Backend**: Express modules for portfolio data, GitHub OAuth/sync, credential requests/review, issuance, verification, plus legacy issuer/wallet/verifier services
