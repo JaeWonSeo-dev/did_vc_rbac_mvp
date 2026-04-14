@@ -68,7 +68,7 @@ This repo seeds a local demo portfolio automatically.
 3. Use the onboarding checklist to show the end-to-end path: profile → GitHub sync → evidence → request review → issue credential → verify.
 4. Show profile editing, featured projects, and manual achievements.
 5. Trigger GitHub connect or describe the seeded GitHub evidence if live OAuth is not configured.
-6. Submit a credential request.
+6. Submit a credential request using either the GitHub contribution template or the achievement template.
 
 ### B. Issuer/admin story
 1. Scroll to the review queue.

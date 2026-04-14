@@ -73,6 +73,32 @@ const emptyRequestDraft = (): RequestDraft => ({
   evidenceOrigin: "github"
 });
 
+const githubRequestTemplate = (): RequestDraft => ({
+  requestType: "GitHubContributionCredential",
+  targetName: "",
+  targetUrl: "",
+  role: "core contributor",
+  commitCount: "",
+  mergedPrCount: "",
+  periodStart: "",
+  periodEnd: "",
+  evidenceSummary: "Summarize the repository work, what was reviewed, and why it should become a credential.",
+  evidenceOrigin: "github"
+});
+
+const achievementRequestTemplate = (): RequestDraft => ({
+  requestType: "PortfolioAchievementCredential",
+  targetName: "",
+  targetUrl: "",
+  role: "achievement holder",
+  commitCount: "",
+  mergedPrCount: "",
+  periodStart: "",
+  periodEnd: "",
+  evidenceSummary: "Summarize the award, completion, or external evidence the issuer should verify.",
+  evidenceOrigin: "manual"
+});
+
 function prettyLabel(label: string) {
   return label
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -297,6 +323,8 @@ export function OverviewPage() {
     }
   };
 
+  const requestFormMode = requestDraft.requestType === "PortfolioAchievementCredential" ? "achievement" : "github";
+
   return (
     <div style={{ display: "grid", gap: 24 }}>
       <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "linear-gradient(135deg, #111830 0%, #16213d 100%)" }}>
@@ -458,25 +486,38 @@ export function OverviewPage() {
         <h3 style={{ marginTop: 0 }}>Request credential issuance</h3>
         <p style={{ color: "#94a3b8" }}>This is where the product stops being a static portfolio page and becomes a verifiable proof workflow: the developer submits evidence, then the issuer/admin reviews it before a credential is issued.</p>
         {requestMessage ? <p style={{ color: requestMessage.includes("submitted") ? "#86efac" : "#fca5a5" }}>{requestMessage}</p> : null}
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          <button onClick={() => setRequestDraft(githubRequestTemplate())}>Use GitHub contribution template</button>
+          <button onClick={() => setRequestDraft(achievementRequestTemplate())}>Use achievement template</button>
+          <button onClick={() => setRequestDraft(emptyRequestDraft())}>Clear form</button>
+        </div>
+        <div style={{ padding: 14, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f", marginBottom: 14, color: "#94a3b8" }}>
+          {requestFormMode === "github"
+            ? "GitHub mode: request review for repository contribution evidence such as commits, merged PRs, and project role."
+            : "Achievement mode: request review for awards, completions, certifications, or other non-GitHub evidence."}
+        </div>
         <div style={{ display: "grid", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-            <input value={requestDraft.requestType} onChange={(event) => setRequestDraft((current) => ({ ...current, requestType: event.target.value }))} placeholder="Credential type" />
+            <select value={requestDraft.requestType} onChange={(event) => setRequestDraft((current) => ({ ...current, requestType: event.target.value, evidenceOrigin: event.target.value === "PortfolioAchievementCredential" ? "manual" : "github" }))}>
+              <option value="GitHubContributionCredential">GitHubContributionCredential</option>
+              <option value="PortfolioAchievementCredential">PortfolioAchievementCredential</option>
+            </select>
             <input value={requestDraft.evidenceOrigin} onChange={(event) => setRequestDraft((current) => ({ ...current, evidenceOrigin: event.target.value }))} placeholder="Evidence origin" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-            <input value={requestDraft.targetName} onChange={(event) => setRequestDraft((current) => ({ ...current, targetName: event.target.value }))} placeholder="Repository or target name" />
-            <input value={requestDraft.targetUrl} onChange={(event) => setRequestDraft((current) => ({ ...current, targetUrl: event.target.value }))} placeholder="Repository / evidence URL" />
+            <input value={requestDraft.targetName} onChange={(event) => setRequestDraft((current) => ({ ...current, targetName: event.target.value }))} placeholder={requestFormMode === "github" ? "Repository or target name" : "Achievement / award / completion title"} />
+            <input value={requestDraft.targetUrl} onChange={(event) => setRequestDraft((current) => ({ ...current, targetUrl: event.target.value }))} placeholder={requestFormMode === "github" ? "Repository / evidence URL" : "Proof / certificate URL"} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-            <input value={requestDraft.role} onChange={(event) => setRequestDraft((current) => ({ ...current, role: event.target.value }))} placeholder="Role" />
-            <input value={requestDraft.commitCount} onChange={(event) => setRequestDraft((current) => ({ ...current, commitCount: event.target.value }))} placeholder="Commit count" />
-            <input value={requestDraft.mergedPrCount} onChange={(event) => setRequestDraft((current) => ({ ...current, mergedPrCount: event.target.value }))} placeholder="Merged PR count" />
+            <input value={requestDraft.role} onChange={(event) => setRequestDraft((current) => ({ ...current, role: event.target.value }))} placeholder={requestFormMode === "github" ? "Role" : "Relationship to evidence"} />
+            <input disabled={requestFormMode !== "github"} value={requestDraft.commitCount} onChange={(event) => setRequestDraft((current) => ({ ...current, commitCount: event.target.value }))} placeholder="Commit count" />
+            <input disabled={requestFormMode !== "github"} value={requestDraft.mergedPrCount} onChange={(event) => setRequestDraft((current) => ({ ...current, mergedPrCount: event.target.value }))} placeholder="Merged PR count" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-            <input value={requestDraft.periodStart} onChange={(event) => setRequestDraft((current) => ({ ...current, periodStart: event.target.value }))} placeholder="Period start" />
-            <input value={requestDraft.periodEnd} onChange={(event) => setRequestDraft((current) => ({ ...current, periodEnd: event.target.value }))} placeholder="Period end" />
+            <input disabled={requestFormMode !== "github"} value={requestDraft.periodStart} onChange={(event) => setRequestDraft((current) => ({ ...current, periodStart: event.target.value }))} placeholder="Period start" />
+            <input disabled={requestFormMode !== "github"} value={requestDraft.periodEnd} onChange={(event) => setRequestDraft((current) => ({ ...current, periodEnd: event.target.value }))} placeholder="Period end" />
           </div>
-          <textarea rows={4} value={requestDraft.evidenceSummary} onChange={(event) => setRequestDraft((current) => ({ ...current, evidenceSummary: event.target.value }))} placeholder="Explain what the issuer should verify" />
+          <textarea rows={4} value={requestDraft.evidenceSummary} onChange={(event) => setRequestDraft((current) => ({ ...current, evidenceSummary: event.target.value }))} placeholder={requestFormMode === "github" ? "Explain what the issuer should verify about the repository contribution" : "Explain what the issuer should verify about the award, completion, or external evidence"} />
           <div><button disabled={!userId} onClick={() => void submitRequest()}>Submit request for review</button></div>
         </div>
       </section>
