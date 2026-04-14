@@ -105,6 +105,13 @@ function prettyLabel(label: string) {
     .replace(/^./, (value) => value.toUpperCase());
 }
 
+function statusTone(status: string) {
+  if (status === "active") return { color: "#4ade80", label: "Active" };
+  if (status === "revoked") return { color: "#fca5a5", label: "Revoked" };
+  if (status === "suspended") return { color: "#fbbf24", label: "Suspended" };
+  return { color: "#cbd5e1", label: status };
+}
+
 export function OverviewPage() {
   const { data, error, refresh } = useSummary();
   const portfolio = data?.portfolio;
@@ -551,21 +558,37 @@ export function OverviewPage() {
         <h3 style={{ marginTop: 0 }}>Issued credentials and registry controls</h3>
         <p style={{ color: "#94a3b8" }}>Admin-side status controls for the recruiter verification page: active, suspended, or revoked.</p>
         <div style={{ display: "grid", gap: 14 }}>
-          {(portfolio?.credentials ?? []).map((credential: any) => (
-            <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <strong>{credential.credential_type}</strong>
-                <span style={{ color: credential.status === "active" ? "#4ade80" : credential.status === "revoked" ? "#fca5a5" : "#fbbf24" }}>{credential.status}</span>
+          {(portfolio?.credentials ?? []).map((credential: any) => {
+            const tone = statusTone(credential.status);
+            return (
+              <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: `1px solid ${tone.color}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <strong>{credential.credential_type}</strong>
+                  <span style={{ color: tone.color, fontWeight: 700 }}>{tone.label}</span>
+                </div>
+                {credential.summary?.title ? <p style={{ marginBottom: 8, color: "#93c5fd" }}>{credential.summary.title}</p> : null}
+                {credential.summary?.narrative ? <p style={{ color: "#e2e8f0" }}>{credential.summary.narrative}</p> : null}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 12 }}>
+                  {credential.summary?.repository ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Repository:</strong> {credential.summary.repository}</div> : null}
+                  {credential.summary?.role ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Role:</strong> {credential.summary.role}</div> : null}
+                  {credential.summary?.commitCount ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Commits:</strong> {credential.summary.commitCount}</div> : null}
+                  {credential.summary?.mergedPrCount ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Merged PRs:</strong> {credential.summary.mergedPrCount}</div> : null}
+                  {credential.summary?.category ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Category:</strong> {credential.summary.category}</div> : null}
+                  {credential.summary?.issuerName ? <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>Issuer:</strong> {credential.summary.issuerName}</div> : null}
+                </div>
+                <details>
+                  <summary style={{ cursor: "pointer", color: "#94a3b8" }}>Show raw summary JSON</summary>
+                  <pre style={{ whiteSpace: "pre-wrap", marginBottom: 12 }}>{JSON.stringify(credential.summary, null, 2)}</pre>
+                </details>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+                  <Link to={`/verify/${credential.credential_jti}`}>Open verification page</Link>
+                  <button onClick={() => void updateCredentialStatus(credential.credential_jti, "active")}>Mark active</button>
+                  <button onClick={() => void updateCredentialStatus(credential.credential_jti, "suspended")}>Suspend</button>
+                  <button onClick={() => void updateCredentialStatus(credential.credential_jti, "revoked")}>Revoke</button>
+                </div>
               </div>
-              <pre style={{ whiteSpace: "pre-wrap", marginBottom: 12 }}>{JSON.stringify(credential.summary, null, 2)}</pre>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Link to={`/verify/${credential.credential_jti}`}>Open verification page</Link>
-                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "active")}>Mark active</button>
-                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "suspended")}>Suspend</button>
-                <button onClick={() => void updateCredentialStatus(credential.credential_jti, "revoked")}>Revoke</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
