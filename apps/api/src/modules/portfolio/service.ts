@@ -33,6 +33,20 @@ function isoDateDaysAgo(days: number) {
   return new Date(Date.now() - 1000 * 60 * 60 * 24 * days).toISOString().slice(0, 10);
 }
 
+function buildOwnershipNarrative(input: { githubUsername: string; githubProfileUrl: string }) {
+  return `The issuer verified that this DID is linked to the GitHub account @${input.githubUsername} (${input.githubProfileUrl}).`;
+}
+
+function buildContributionNarrative(input: { repository: string; role: string; commitCount: number; mergedPrCount: number; periodStart: string; periodEnd: string; evidenceSummary: string }) {
+  return `The issuer reviewed evidence showing ${input.role} activity on ${input.repository} between ${input.periodStart} and ${input.periodEnd}, including ${input.commitCount} observed contributions and ${input.mergedPrCount} merged PRs. ${input.evidenceSummary}`;
+}
+
+function buildAchievementNarrative(input: { title: string; category: string; issuerName?: string; issuedOn?: string; evidenceSummary: string }) {
+  const issuerPart = input.issuerName ? ` by ${input.issuerName}` : "";
+  const datePart = input.issuedOn ? ` on ${input.issuedOn}` : "";
+  return `The issuer reviewed ${input.category} evidence for "${input.title}"${issuerPart}${datePart}. ${input.evidenceSummary}`;
+}
+
 async function githubRequest<T>(url: string, accessToken: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...init,
@@ -384,7 +398,7 @@ export async function issueGitHubAccountOwnershipCredential(db: any, issuer: { d
   const timestamp = nowMillis();
   db.prepare(`INSERT INTO portfolio_credentials(credential_jti, user_id, credential_type, vc_jwt, summary_json, status, issued_at, expires_at, created_at)
     VALUES(?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
-    .run(jti, input.userId, "GitHubAccountOwnershipCredential", vcJwt, JSON.stringify({ title: "GitHub account ownership verified", githubUsername: input.githubUsername, githubProfileUrl: input.githubProfileUrl, verifiedAt: iat }), iat, exp, timestamp);
+    .run(jti, input.userId, "GitHubAccountOwnershipCredential", vcJwt, JSON.stringify({ title: "GitHub account ownership verified", githubUsername: input.githubUsername, githubProfileUrl: input.githubProfileUrl, verifiedAt: iat, narrative: buildOwnershipNarrative({ githubUsername: input.githubUsername, githubProfileUrl: input.githubProfileUrl }) }), iat, exp, timestamp);
   return { claims, vcJwt, credentialJti: jti };
 }
 
@@ -439,7 +453,7 @@ export async function issueGitHubContributionCredential(db: any, issuer: { did: 
   const timestamp = nowMillis();
   db.prepare(`INSERT INTO portfolio_credentials(credential_jti, user_id, credential_type, vc_jwt, summary_json, status, issued_at, expires_at, created_at)
     VALUES(?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
-    .run(jti, input.userId, "GitHubContributionCredential", vcJwt, JSON.stringify({ title: `${input.repository} contribution verified`, repository: input.repository, repositoryUrl: input.repositoryUrl, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary }), iat, exp, timestamp);
+    .run(jti, input.userId, "GitHubContributionCredential", vcJwt, JSON.stringify({ title: `${input.repository} contribution verified`, repository: input.repository, repositoryUrl: input.repositoryUrl, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary, narrative: buildContributionNarrative({ repository: input.repository, role: input.role, commitCount: input.commitCount, mergedPrCount: input.mergedPrCount, periodStart: input.periodStart, periodEnd: input.periodEnd, evidenceSummary: input.evidenceSummary }) }), iat, exp, timestamp);
   return { claims, vcJwt, credentialJti: jti };
 }
 
@@ -507,7 +521,7 @@ export async function issuePortfolioAchievementCredential(db: any, issuer: { did
   const timestamp = nowMillis();
   db.prepare(`INSERT INTO portfolio_credentials(credential_jti, user_id, credential_type, vc_jwt, summary_json, status, issued_at, expires_at, created_at)
     VALUES(?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
-    .run(jti, input.userId, "PortfolioAchievementCredential", vcJwt, JSON.stringify({ title, category, issuerName, issuedOn, credentialUrl, evidenceSummary, evidence }), iat, exp, timestamp);
+    .run(jti, input.userId, "PortfolioAchievementCredential", vcJwt, JSON.stringify({ title, category, issuerName, issuedOn, credentialUrl, evidenceSummary, evidence, narrative: buildAchievementNarrative({ title, category, issuerName, issuedOn, evidenceSummary }) }), iat, exp, timestamp);
   return { claims, vcJwt, credentialJti: jti };
 }
 

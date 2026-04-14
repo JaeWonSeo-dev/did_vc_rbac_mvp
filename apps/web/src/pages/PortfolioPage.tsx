@@ -175,6 +175,7 @@ export function PortfolioPage() {
                       : "Issuer registry marks this credential as temporarily suspended."}
                   </p>
                 ) : null}
+                {credential.summary?.narrative ? <p style={{ color: "#e2e8f0" }}>{credential.summary.narrative}</p> : null}
                 <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
                 <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>
               </div>

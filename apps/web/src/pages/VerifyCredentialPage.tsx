@@ -132,6 +132,11 @@ export function VerifyCredentialPage() {
 
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>Recruiter-readable summary</h3>
+        {data.summary?.narrative ? (
+          <div style={{ marginBottom: 14, padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f", color: "#e2e8f0" }}>
+            {data.summary.narrative}
+          </div>
+        ) : null}
         {summaryEntries.length ? (
           <div style={{ display: "grid", gap: 12 }}>
             {summaryEntries.map(([key, value]) => (
