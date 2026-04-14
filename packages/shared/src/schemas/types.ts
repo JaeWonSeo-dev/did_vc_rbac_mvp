@@ -41,15 +41,28 @@ export const GitHubContributionCredentialSubjectSchema = z.object({
   evidenceSummary: z.string()
 });
 
+export const PortfolioAchievementCredentialSubjectSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  category: z.string(),
+  issuerName: z.string().optional(),
+  issuedOn: z.string().optional(),
+  credentialUrl: z.string().url().optional(),
+  evidenceSummary: z.string(),
+  evidence: z.array(z.string()).default([])
+});
+
 export const PortfolioCredentialSubjectSchema = z.union([
   GitHubAccountOwnershipCredentialSubjectSchema,
-  GitHubContributionCredentialSubjectSchema
+  GitHubContributionCredentialSubjectSchema,
+  PortfolioAchievementCredentialSubjectSchema
 ]);
 
 export const CredentialSubjectSchema = z.union([
   RbacCredentialSubjectSchema,
   GitHubAccountOwnershipCredentialSubjectSchema,
-  GitHubContributionCredentialSubjectSchema
+  GitHubContributionCredentialSubjectSchema,
+  PortfolioAchievementCredentialSubjectSchema
 ]);
 
 export const VcClaimsSchema = z.object({
@@ -79,6 +92,14 @@ export type GitHubContributionVcClaims = VcClaims & {
   vc: {
     type: [string, ...string[]];
     credentialSubject: z.infer<typeof GitHubContributionCredentialSubjectSchema>;
+    credentialStatus: z.infer<typeof LocalCredentialStatusSchema>;
+  };
+};
+
+export type PortfolioAchievementVcClaims = VcClaims & {
+  vc: {
+    type: [string, ...string[]];
+    credentialSubject: z.infer<typeof PortfolioAchievementCredentialSubjectSchema>;
     credentialStatus: z.infer<typeof LocalCredentialStatusSchema>;
   };
 };

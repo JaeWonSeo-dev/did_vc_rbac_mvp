@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { signVcJwt, verifyVcJwt, type GitHubAccountOwnershipVcClaims, type GitHubContributionVcClaims } from "@did-vc-rbac/shared";
+import { signVcJwt, verifyVcJwt, type GitHubAccountOwnershipVcClaims, type GitHubContributionVcClaims, type PortfolioAchievementVcClaims } from "@did-vc-rbac/shared";
 
 function nowSeconds() {
   return Math.floor(Date.now() / 1000);
@@ -443,6 +443,74 @@ export async function issueGitHubContributionCredential(db: any, issuer: { did: 
   return { claims, vcJwt, credentialJti: jti };
 }
 
+export async function issuePortfolioAchievementCredential(db: any, issuer: { did: string; privateJwk: JsonWebKey }, input: {
+  userId: string;
+  subjectDid: string;
+  achievementId?: number;
+  title?: string;
+  category?: string;
+  issuerName?: string;
+  issuedOn?: string;
+  credentialUrl?: string;
+  description?: string;
+  evidence?: string[];
+  expiresInSeconds?: number;
+}) {
+  const achievement = input.achievementId
+    ? db.prepare("SELECT * FROM portfolio_achievements WHERE id = ? AND user_id = ?").get(input.achievementId, input.userId)
+    : db.prepare("SELECT * FROM portfolio_achievements WHERE user_id = ? ORDER BY featured DESC, sort_order ASC, id ASC LIMIT 1").get(input.userId);
+
+  if (!achievement && !input.title?.trim()) {
+    throw new Error("no portfolio achievement available");
+  }
+
+  const title = input.title?.trim() || achievement.title;
+  const category = input.category?.trim() || achievement.category || "manual-achievement";
+  const issuerName = input.issuerName?.trim() || achievement?.issuer_name || undefined;
+  const issuedOn = input.issuedOn?.trim() || achievement?.issued_on || undefined;
+  const credentialUrl = input.credentialUrl?.trim() || achievement?.credential_url || undefined;
+  const evidence = (input.evidence ?? parseJson(achievement?.evidence_json, [])).map((item: string) => item.trim()).filter(Boolean);
+  const evidenceSummary = input.description?.trim() || achievement?.description || `${title} was added as verified ${category} evidence in the portfolio.`;
+
+  const existing = db.prepare("SELECT credential_jti FROM portfolio_credentials WHERE user_id = ? AND credential_type = ? AND json_extract(summary_json, '$.title') = ? ORDER BY created_at DESC LIMIT 1").get(input.userId, "PortfolioAchievementCredential", title);
+  if (existing) return existing;
+
+  const jti = randomUUID();
+  const iat = nowSeconds();
+  const exp = iat + (input.expiresInSeconds ?? 60 * 60 * 24 * 180);
+  const claims: PortfolioAchievementVcClaims = {
+    jti,
+    iss: issuer.did,
+    sub: input.subjectDid,
+    iat,
+    exp,
+    vc: {
+      type: ["VerifiableCredential", "PortfolioAchievementCredential"],
+      credentialSubject: {
+        id: input.subjectDid,
+        title,
+        category,
+        issuerName,
+        issuedOn,
+        credentialUrl,
+        evidenceSummary,
+        evidence
+      },
+      credentialStatus: {
+        id: `status:${jti}`,
+        type: "LocalCredentialStatus"
+      }
+    }
+  };
+
+  const vcJwt = await signVcJwt(claims, issuer.privateJwk);
+  const timestamp = nowMillis();
+  db.prepare(`INSERT INTO portfolio_credentials(credential_jti, user_id, credential_type, vc_jwt, summary_json, status, issued_at, expires_at, created_at)
+    VALUES(?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
+    .run(jti, input.userId, "PortfolioAchievementCredential", vcJwt, JSON.stringify({ title, category, issuerName, issuedOn, credentialUrl, evidenceSummary, evidence }), iat, exp, timestamp);
+  return { claims, vcJwt, credentialJti: jti };
+}
+
 export function listPortfolioCredentials(db: any, userId: string) {
   return db.prepare("SELECT * FROM portfolio_credentials WHERE user_id = ? ORDER BY issued_at DESC").all(userId);
 }
@@ -567,6 +635,9 @@ export async function approveCredentialRequest(db: any, issuer: { did: string; p
   if (!request) throw new Error("request not found");
   if (request.status !== "pending") throw new Error(`request already ${request.status}`);
 
+  const user = db.prepare("SELECT * FROM users WHERE id = ?").get(request.user_id);
+  if (!user) throw new Error("user not found");
+
   let issuedCredentialJti: string | null = null;
   if (request.request_type === "GitHubContributionCredential") {
     const payload = request.payload ?? {};
@@ -582,6 +653,21 @@ export async function approveCredentialRequest(db: any, issuer: { did: string; p
     });
     const contribution = issued.credentials.find((item: any) => item.credential_type === "GitHubContributionCredential" && item.summary?.repository === (payload.repositoryName ?? request.target_name));
     issuedCredentialJti = contribution?.credential_jti ?? null;
+  } else if (request.request_type === "PortfolioAchievementCredential") {
+    const payload = request.payload ?? {};
+    const issued = await issuePortfolioAchievementCredential(db, issuer, {
+      userId: request.user_id,
+      subjectDid: user.did,
+      achievementId: payload.achievementId,
+      title: payload.title ?? request.target_name,
+      category: payload.category,
+      issuerName: payload.issuerName,
+      issuedOn: payload.issuedOn,
+      credentialUrl: payload.credentialUrl ?? request.target_url,
+      description: payload.evidenceSummary ?? payload.description,
+      evidence: Array.isArray(payload.evidence) ? payload.evidence : undefined
+    });
+    issuedCredentialJti = (issued as any).credentialJti ?? (issued as any).credential_jti ?? null;
   }
 
   return reviewCredentialRequest(db, requestId, { status: "approved", reviewerNote, issuedCredentialJti });
@@ -823,6 +909,17 @@ export async function seedPortfolioDemoData(db: any, issuer: { did: string; priv
     periodStart: "2026-03-01",
     periodEnd: "2026-04-13",
     evidenceSummary: "Contributed the DID/VC verification pipeline and refactored the product toward a verifiable developer portfolio experience."
+  });
+
+  await issuePortfolioAchievementCredential(db, issuer, {
+    userId: user.id,
+    subjectDid: user.did,
+    title: "OpenClaw Portfolio MVP Completion",
+    category: "completion",
+    issuerName: "OpenClaw Lab",
+    issuedOn: "2026-04-13",
+    description: "Completed an MVP that turns GitHub and manual career evidence into DID/VC credentials.",
+    evidence: ["Reviewed build and test artifacts", "Demo portfolio and verifier flow recorded"]
   });
 
   createCredentialRequest(db, {

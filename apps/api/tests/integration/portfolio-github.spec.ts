@@ -135,7 +135,7 @@ describe("portfolio github flow", () => {
     expect(callback.body.githubUsername).toBe("octo-dev");
     expect(callback.body.repositoryCount).toBe(2);
 
-    const requestCreated = await request(app)
+    const githubRequestCreated = await request(app)
       .post(`/api/portfolio/users/${createdUser.body.id}/requests`)
       .send({
         requestType: "GitHubContributionCredential",
@@ -154,14 +154,40 @@ describe("portfolio github flow", () => {
       })
       .expect(200);
 
-    expect(requestCreated.body.status).toBe("pending");
+    const achievementRequestCreated = await request(app)
+      .post(`/api/portfolio/users/${createdUser.body.id}/requests`)
+      .send({
+        requestType: "PortfolioAchievementCredential",
+        targetName: "Hackathon Winner",
+        targetUrl: "https://proof.example.com/hackathon-winner",
+        evidenceOrigin: "manual",
+        payload: {
+          title: "Hackathon Winner",
+          category: "award",
+          issuerName: "Seoul Hack Week",
+          issuedOn: "2026-04-01",
+          credentialUrl: "https://proof.example.com/hackathon-winner",
+          evidenceSummary: "Awarded first place after portfolio and live demo review.",
+          evidence: ["Award letter", "Demo day review board note"]
+        }
+      })
+      .expect(200);
+
+    expect(githubRequestCreated.body.status).toBe("pending");
+    expect(achievementRequestCreated.body.status).toBe("pending");
 
     const approved = await request(app)
-      .post(`/api/admin/portfolio/requests/${requestCreated.body.id}/approve`)
+      .post(`/api/admin/portfolio/requests/${githubRequestCreated.body.id}/approve`)
       .send({ reviewerNote: "Evidence checked by issuer admin." })
       .expect(200);
 
+    const approvedAchievement = await request(app)
+      .post(`/api/admin/portfolio/requests/${achievementRequestCreated.body.id}/approve`)
+      .send({ reviewerNote: "Award proof checked by issuer admin." })
+      .expect(200);
+
     expect(approved.body.status).toBe("approved");
+    expect(approvedAchievement.body.status).toBe("approved");
 
     const portfolio = await request(app).get("/api/portfolio/octo-dev").expect(200);
     expect(portfolio.body.github.username).toBe("octo-dev");
@@ -170,7 +196,8 @@ describe("portfolio github flow", () => {
     expect(portfolio.body.credentialRequests.some((item: any) => item.status === "approved")).toBe(true);
     expect(portfolio.body.credentials.map((item: any) => item.credential_type)).toEqual(expect.arrayContaining([
       "GitHubAccountOwnershipCredential",
-      "GitHubContributionCredential"
+      "GitHubContributionCredential",
+      "PortfolioAchievementCredential"
     ]));
     expect(portfolio.body.github.contributionSummary.totalEstimatedCommits).toBeGreaterThanOrEqual(19);
     expect(portfolio.body.repositories[0].summary.proofPoints.length).toBeGreaterThan(0);

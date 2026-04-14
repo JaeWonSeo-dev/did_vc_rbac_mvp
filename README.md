@@ -23,9 +23,10 @@ The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legac
 - GitHub evidence sync and local persistence
 - richer GitHub evidence modeling with observed contribution counts, merged PR counts, proof points, and sync-window summaries
 - credential request → issuer/admin review → approve/reject workflow
-- two VC types:
+- three VC types:
   - `GitHubAccountOwnershipCredential`
   - `GitHubContributionCredential`
+  - `PortfolioAchievementCredential`
 - VC verification with issuer, subject, status, status meaning, and expiry shown in the UI
 
 ### Still intentionally simplified
@@ -104,7 +105,7 @@ npm --workspace @did-vc-rbac/web run test
 
 ## Remaining gaps
 - real GitHub activity ingestion for user-specific commits, authored PRs, merged PRs, and starred evidence instead of partial repo-level inference
-- a dedicated VC type for manual achievement / award proof instead of just rendering the evidence on the public page
+- deeper claim derivation for manual evidence (today it can issue a `PortfolioAchievementCredential`, but issuer review and supporting proof are still local-first)
 - stronger multi-user auth and authorization around issuer/admin review surfaces
 - better visual design and component reuse beyond inline styles
 - deployment docs for a shareable online demo
