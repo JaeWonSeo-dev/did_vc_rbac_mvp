@@ -92,6 +92,9 @@ This repo seeds a local demo portfolio automatically.
 ### Why not just show a GitHub link?
 Because a GitHub link alone does not give a recruiter a signed, issuer-reviewed claim they can verify independently.
 
+Use this one-line pitch in demos:
+> "This product does not just show where I worked — it lets me submit verified evidence as recruiter-checkable credentials."
+
 ### Why DID / VC here?
 Because the developer should be able to hold and present portable credentials, while the recruiter should be able to verify issuer signatures and credential status without trusting a hidden database record alone.
 

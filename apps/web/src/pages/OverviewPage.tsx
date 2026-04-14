@@ -73,6 +73,12 @@ const emptyRequestDraft = (): RequestDraft => ({
   evidenceOrigin: "github"
 });
 
+function prettyLabel(label: string) {
+  return label
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
 export function OverviewPage() {
   const { data, error, refresh } = useSummary();
   const portfolio = data?.portfolio;
@@ -254,13 +260,32 @@ export function OverviewPage() {
       <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "linear-gradient(135deg, #111830 0%, #16213d 100%)" }}>
         <p style={{ margin: 0, color: "#93c5fd", fontSize: 13, letterSpacing: 1.2, textTransform: "uppercase" }}>Portfolio-first MVP</p>
         <h2 style={{ marginBottom: 12 }}>Verifiable developer portfolio dashboard</h2>
-        <p style={{ maxWidth: 900, color: "#cbd5e1" }}>
-          Edit your public story, attach GitHub and non-GitHub evidence, submit credential requests, and review issuer decisions in one place.
+        <p style={{ maxWidth: 900, color: "#cbd5e1", marginBottom: 10 }}>
+          Turn scattered developer evidence into a portfolio a recruiter can actually verify.
         </p>
+        <p style={{ maxWidth: 900, color: "#94a3b8" }}>
+          Instead of only pasting a GitHub link, this dashboard helps you package GitHub activity, featured projects, awards, completions, and manual proof into issuer-reviewed credentials with a public verification page.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 20 }}>
+          <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+            <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Why this is different</div>
+            <div style={{ marginTop: 8, color: "#e2e8f0" }}>Recruiters do not just read your claims — they can verify issuer signature, registry status, and expiry.</div>
+          </div>
+          <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+            <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Core flow</div>
+            <div style={{ marginTop: 8, color: "#e2e8f0" }}>Collect evidence → request review → issue credential → share public proof.</div>
+          </div>
+          <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+            <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Current focus</div>
+            <div style={{ marginTop: 8, color: "#e2e8f0" }}>MVP-quality portfolio story with GitHub sync, manual achievements, issuance workflow, and recruiter verification UX.</div>
+          </div>
+        </div>
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 20 }}>
           {Object.entries(stats).map(([label, value]) => (
             <div key={label} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
-              <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>{label}</div>
+              <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>{prettyLabel(label)}</div>
               <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
             </div>
           ))}
@@ -368,7 +393,7 @@ export function OverviewPage() {
 
       <section style={{ padding: 24, border: "1px solid #24324f", borderRadius: 20, background: "#111830" }}>
         <h3 style={{ marginTop: 0 }}>Request credential issuance</h3>
-        <p style={{ color: "#94a3b8" }}>This is the missing workflow from the original prompt: the user requests evidence review, then the issuer/admin approves or rejects it.</p>
+        <p style={{ color: "#94a3b8" }}>This is where the product stops being a static portfolio page and becomes a verifiable proof workflow: the developer submits evidence, then the issuer/admin reviews it before a credential is issued.</p>
         {requestMessage ? <p style={{ color: requestMessage.includes("submitted") ? "#86efac" : "#fca5a5" }}>{requestMessage}</p> : null}
         <div style={{ display: "grid", gap: 12 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>

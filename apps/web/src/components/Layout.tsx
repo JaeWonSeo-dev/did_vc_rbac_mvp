@@ -13,7 +13,7 @@ export function Layout() {
           <p style={{ margin: 0, color: "#93c5fd", fontSize: 13, textTransform: "uppercase", letterSpacing: 1.2 }}>Portfolio-first product</p>
           <h1 style={{ marginBottom: 10 }}>Verifiable Developer Portfolio MVP</h1>
           <p style={{ maxWidth: 860, color: "#cbd5e1", marginBottom: 16 }}>
-            A DID/VC portfolio product for developers: edit your story, sync GitHub evidence, issue verifiable credentials, and give recruiters a verification page that clearly shows issuer, signature validity, status, and expiry.
+            Not just a GitHub link. This product lets a developer turn GitHub activity, project history, and achievement evidence into issuer-reviewed verifiable credentials that recruiters can inspect and verify immediately.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {primaryLinks.map(([to, label]) => (
