@@ -2,6 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 
+function statusBadge(status: string) {
+  if (status === "active") return { color: "#4ade80", label: "Active" };
+  if (status === "revoked") return { color: "#fca5a5", label: "Revoked" };
+  if (status === "suspended") return { color: "#fbbf24", label: "Suspended" };
+  return { color: "#cbd5e1", label: status };
+}
+
 export function PortfolioPage() {
   const { slug = "sjw-dev" } = useParams();
   const [data, setData] = useState<any>(null);
@@ -151,17 +158,28 @@ export function PortfolioPage() {
 
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>Verifiable credentials</h3>
+        <p style={{ color: "#94a3b8" }}>Each credential can be opened in a recruiter-facing verification page with signature, registry status, and expiry context.</p>
         <div style={{ display: "grid", gap: 16 }}>
-          {credentials.map((credential: any) => (
-            <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <strong>{credential.credential_type}</strong>
-                <span style={{ color: credential.status === "active" ? "#4ade80" : credential.status === "revoked" ? "#fca5a5" : "#fbbf24" }}>{credential.status}</span>
+          {credentials.map((credential: any) => {
+            const badge = statusBadge(credential.status);
+            return (
+              <div key={credential.credential_jti} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: `1px solid ${badge.color}` }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <strong>{credential.credential_type}</strong>
+                  <span style={{ color: badge.color, fontWeight: 700 }}>{badge.label}</span>
+                </div>
+                {credential.status !== "active" ? (
+                  <p style={{ color: badge.color, marginBottom: 8 }}>
+                    {credential.status === "revoked"
+                      ? "Issuer registry marks this credential as revoked."
+                      : "Issuer registry marks this credential as temporarily suspended."}
+                  </p>
+                ) : null}
+                <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
+                <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>
               </div>
-              <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(credential.summary, null, 2)}</pre>
-              <Link to={`/verify/${credential.credential_jti}`}>Open recruiter verification</Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

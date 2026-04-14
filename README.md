@@ -27,7 +27,7 @@ The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legac
   - `GitHubAccountOwnershipCredential`
   - `GitHubContributionCredential`
   - `PortfolioAchievementCredential`
-- VC verification with issuer, subject, status, status meaning, and expiry shown in the UI
+- VC verification with issuer, subject, status, status meaning, expiry, and a recruiter-facing trust decision shown in the UI
 - admin-side registry controls to mark portfolio credentials as active, suspended, or revoked and immediately reflect that on recruiter verification pages
 
 ### Still intentionally simplified
