@@ -34,6 +34,20 @@ export function Layout() {
               </NavLink>
             ))}
             <NavLink
+              to="/portfolio/sjw-dev"
+              style={({ isActive }) => ({
+                color: isActive ? "#08111f" : "#e2e8f0",
+                background: isActive ? "#93c5fd" : "#0b1020",
+                border: "1px solid #24324f",
+                padding: "10px 14px",
+                borderRadius: 999,
+                textDecoration: "none",
+                fontWeight: 700
+              })}
+            >
+              Recruiter View
+            </NavLink>
+            <NavLink
               to="/legacy"
               style={({ isActive }) => ({
                 color: isActive ? "#111827" : "#fbbf24",
@@ -50,8 +64,14 @@ export function Layout() {
           </div>
         </div>
 
-        <div style={{ padding: 14, borderRadius: 16, background: "#111830", border: "1px solid #24324f", color: "#94a3b8" }}>
-          The original RBAC demo surfaces still exist for compatibility, but they now live behind a separate <strong style={{ color: "#fbbf24" }}>Legacy Tools</strong> entry so the main product narrative stays portfolio-first.
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          <div style={{ padding: 14, borderRadius: 16, background: "#111830", border: "1px solid #24324f", color: "#94a3b8" }}>
+            <strong style={{ color: "#e2e8f0" }}>Recommended demo order</strong>
+            <div style={{ marginTop: 8 }}>1) Dashboard → 2) Public Portfolio → 3) Recruiter verification link inside a credential card.</div>
+          </div>
+          <div style={{ padding: 14, borderRadius: 16, background: "#111830", border: "1px solid #24324f", color: "#94a3b8" }}>
+            The original RBAC demo surfaces still exist for compatibility, but they now live behind a separate <strong style={{ color: "#fbbf24" }}>Legacy Tools</strong> entry so the main product narrative stays portfolio-first.
+          </div>
         </div>
       </div>
       <Outlet />

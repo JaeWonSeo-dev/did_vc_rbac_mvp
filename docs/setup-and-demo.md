@@ -48,8 +48,9 @@ This repo seeds a local demo portfolio automatically.
 
 ### Demo persona
 - portfolio slug: `sjw-dev`
-- public portfolio: <http://localhost:5173/portfolio/sjw-dev>
 - dashboard: <http://localhost:5173/>
+- public portfolio: <http://localhost:5173/portfolio/sjw-dev>
+- recruiter verification: open any credential card from the public portfolio or dashboard
 
 ### What the seeded demo shows
 - DID-backed profile
