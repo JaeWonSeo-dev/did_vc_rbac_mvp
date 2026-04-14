@@ -432,6 +432,7 @@ export function OverviewPage() {
           <button onClick={addProject}>Add project</button>
         </div>
         <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+          {!projects.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No featured projects yet. Add one or two strong projects that explain what you built and why they matter.</div> : null}
           {projects.map((project, index) => (
             <div key={`${project.name}-${index}`} style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -465,6 +466,7 @@ export function OverviewPage() {
           <button onClick={addAchievement}>Add achievement</button>
         </div>
         <div style={{ display: "grid", gap: 16, marginTop: 16 }}>
+          {!achievements.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No non-GitHub evidence yet. Add awards, completions, certifications, or proof links that strengthen the portfolio story.</div> : null}
           {achievements.map((achievement, index) => (
             <div key={`${achievement.title}-${index}`} style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -538,6 +540,7 @@ export function OverviewPage() {
         <p style={{ color: "#94a3b8" }}>Simplified admin panel wired directly into the dashboard for MVP practicality.</p>
         {reviewMessage ? <p style={{ color: reviewMessage.includes("Request") ? "#86efac" : "#fca5a5" }}>{reviewMessage}</p> : null}
         <div style={{ display: "grid", gap: 14 }}>
+          {!requests.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No review requests yet. Submit one from the request form below to show the issuer workflow end to end.</div> : null}
           {requests.map((request: any) => (
             <div key={request.id} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

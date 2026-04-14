@@ -82,6 +82,7 @@ export function PortfolioPage() {
           <Link to="/">Back to dashboard</Link>
         </div>
         <div style={{ display: "grid", gap: 16 }}>
+          {!projects.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No featured projects are published yet.</div> : null}
           {projects.map((project: any) => (
             <div key={project.id} style={{ padding: 18, borderRadius: 16, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
@@ -104,6 +105,7 @@ export function PortfolioPage() {
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>Awards, completions, and manual achievements</h3>
         <div style={{ display: "grid", gap: 16 }}>
+          {!achievements.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No awards, completions, or manual achievements have been published yet.</div> : null}
           {achievements.map((achievement: any) => (
             <div key={achievement.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
