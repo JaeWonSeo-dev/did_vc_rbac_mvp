@@ -340,9 +340,12 @@ export function OverviewPage() {
         <p style={{ maxWidth: 900, color: "#cbd5e1", marginBottom: 10 }}>
           Turn scattered developer evidence into a portfolio a recruiter can actually verify.
         </p>
-        <p style={{ maxWidth: 900, color: "#94a3b8" }}>
+        <p style={{ maxWidth: 900, color: "#94a3b8", marginBottom: 16 }}>
           Instead of only pasting a GitHub link, this dashboard helps you package GitHub activity, featured projects, awards, completions, and manual proof into issuer-reviewed credentials with a public verification page.
         </p>
+        <div style={{ padding: 14, borderRadius: 16, background: "rgba(11, 16, 32, 0.9)", border: "1px solid #24324f", color: "#cbd5e1", maxWidth: 920 }}>
+          <strong style={{ color: "#93c5fd" }}>Fast demo script:</strong> connect or explain GitHub evidence, show curated projects and achievements, submit a request, approve it, then open the recruiter verification page.
+        </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 20 }}>
           <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
@@ -385,6 +388,7 @@ export function OverviewPage() {
           </div>
           <div style={{ color: "#94a3b8" }}>{onboardingSteps.filter((step) => step.done).length} / {onboardingSteps.length} done</div>
         </div>
+        <p style={{ color: "#94a3b8", marginTop: 12 }}>If you only have two minutes, clear the first four steps and then jump straight to a verification link.</p>
         <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
           {onboardingSteps.map((step, index) => (
             <div key={step.title} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: `1px solid ${step.done ? "#166534" : "#24324f"}` }}>

@@ -45,7 +45,10 @@ export function PortfolioPage() {
         <p style={{ margin: 0, color: "#93c5fd", fontSize: 13, textTransform: "uppercase", letterSpacing: 1.2 }}>Public portfolio</p>
         <h2 style={{ marginTop: 12, marginBottom: 8 }}>{profile.display_name}</h2>
         <p style={{ fontSize: 18, color: "#e2e8f0" }}>{profile.headline}</p>
-        <p style={{ maxWidth: 900, color: "#cbd5e1" }}>{profile.bio}</p>
+        <p style={{ maxWidth: 900, color: "#cbd5e1", marginBottom: 16 }}>{profile.bio}</p>
+        <div style={{ padding: 14, borderRadius: 16, background: "rgba(11, 16, 32, 0.9)", border: "1px solid #24324f", color: "#cbd5e1", maxWidth: 920 }}>
+          This page is meant to be recruiter-readable first: featured work, supporting evidence, issued credentials, and verification links appear in one place.
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 20 }}>
           <div style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
             <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Verified identity</div>
@@ -121,6 +124,7 @@ export function PortfolioPage() {
 
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>GitHub evidence snapshot</h3>
+        <p style={{ color: "#94a3b8" }}>Repository cards below summarize what was actually inspected during sync: contributions, merged PRs, contributor context, and confidence level.</p>
         <div style={{ display: "grid", gap: 16 }}>
           {repositories.map((repo: any) => (
             <div key={repo.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
