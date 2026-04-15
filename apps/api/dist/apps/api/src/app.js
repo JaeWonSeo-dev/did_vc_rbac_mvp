@@ -9,7 +9,7 @@ import { issueCredential, listCredentials, updateCredentialStatus } from "./modu
 import { createWallet, importWalletCredential, listWalletCredentials, listWallets, createPresentation } from "./modules/wallet/service";
 import { createAuthRequest, deleteSession, issueSession, recordFailure, verifyDirectPost } from "./modules/verifier/service";
 import { listAudit } from "./modules/audit/service";
-import { approveCredentialRequest, completeGitHubOAuthCallback, createCredentialRequest, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, listCredentialRequests, rejectCredentialRequest, replacePortfolioAchievements, replacePortfolioProjects, seedPortfolioDemoData, syncGitHubAccount, updatePortfolioProfile, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
+import { approveCredentialRequest, completeGitHubOAuthCallback, createCredentialRequest, createGitHubOAuthStart, getPublicPortfolioBySlug, issuePortfolioCredentialsFromEvidence, listCredentialRequests, rejectCredentialRequest, replacePortfolioAchievements, replacePortfolioProjects, seedPortfolioDemoData, syncGitHubAccount, updatePortfolioCredentialStatus, updatePortfolioProfile, upsertUserProfile, verifyPortfolioCredential } from "./modules/portfolio/service";
 import { requiredRoleForPath } from "@did-vc-rbac/shared";
 export async function buildApp() {
     const db = createDb(config.databasePath);
@@ -107,6 +107,18 @@ export async function buildApp() {
         try {
             const issued = await issuePortfolioCredentialsFromEvidence(db, issuer, { userId: req.params.userId, ...req.body });
             res.json(issued);
+        }
+        catch (error) {
+            res.status(400).json({ error: String(error?.message ?? error) });
+        }
+    });
+    app.post("/api/admin/portfolio/credentials/:jti/status", (req, res) => {
+        try {
+            const status = String(req.body?.status ?? "");
+            if (!["active", "suspended", "revoked"].includes(status)) {
+                return res.status(400).json({ error: "invalid status" });
+            }
+            res.json(updatePortfolioCredentialStatus(db, req.params.jti, status));
         }
         catch (error) {
             res.status(400).json({ error: String(error?.message ?? error) });
