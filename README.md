@@ -46,6 +46,7 @@ packages/
   shared/ Shared DID, JOSE, VC schema, and legacy RBAC helpers
 docs/
   architecture.md
+  final-submission-checklist.md
   portfolio-gap-analysis.md
   portfolio-p0-implementation-plan.md
   setup-and-demo.md
@@ -102,6 +103,7 @@ npm --workspace @did-vc-rbac/web run test
 ```
 
 ## Docs
+- final submission checklist: `docs/final-submission-checklist.md`
 - setup and demo guide: `docs/setup-and-demo.md`
 - architecture notes: `docs/architecture.md`
 - gap analysis: `docs/portfolio-gap-analysis.md`
