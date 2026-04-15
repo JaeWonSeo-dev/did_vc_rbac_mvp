@@ -1,139 +1,84 @@
 # Verifiable Developer Portfolio MVP
 
-Verifiable Developer Portfolio MVP is a personal project that demonstrates how a developer portfolio can be turned into a **verifiable credential-based presentation flow**.
+Verifiable Developer Portfolio MVP is a monorepo that explores how developer portfolio data can be represented as verifiable credentials.
 
-Instead of showing only a GitHub link or a static resume, this project lets a developer collect GitHub activity, curated projects, and non-GitHub achievements, then move that evidence through an **issuer review and credential issuance flow** so a recruiter can inspect and verify it.
+The project combines portfolio authoring, GitHub evidence collection, issuer review, credential issuance, and recruiter-facing verification into a single local-first system.
 
----
+## Overview
 
-## 1. Project Purpose
+Traditional developer portfolios typically rely on static text, links, and unverifiable claims. This project experiments with a different model:
 
-This project was built to simulate a portfolio platform that combines:
-- developer portfolio management
-- GitHub evidence collection
-- DID / VC based credential issuance
-- recruiter-facing credential verification
+- a developer curates portfolio data and supporting evidence
+- GitHub activity is synced and summarized as portfolio evidence
+- an issuer/admin reviews submitted evidence
+- approved evidence is issued as a verifiable credential
+- a recruiter can inspect and verify the issued credential
 
-The main goal is not production deployment, but a **complete and convincing MVP / personal project demo** that shows the following idea clearly:
+The current implementation is optimized for local development and end-to-end demonstration rather than production deployment.
 
-> A developer should be able to present career evidence as verifiable credentials, and a recruiter should be able to verify that evidence through issuer signature, credential status, and expiry information.
+## Features
 
----
-
-## 2. Main Features
-
-### Portfolio management
-- Edit developer profile information
-- Manage portfolio slug, bio, headline, and location
-- Add featured projects and highlights
+### Portfolio
+- Edit profile metadata such as name, headline, location, bio, and portfolio slug
+- Manage featured projects and highlights
 - Add non-GitHub achievements such as awards, completions, and certifications
+- Publish a public portfolio page
 
-### GitHub evidence integration
-- GitHub OAuth connection flow
-- GitHub profile and repository sync
-- Evidence summary based on authored commits and authored / merged pull requests
-- Repository-level evidence snapshots for demo use
+### GitHub integration
+- GitHub OAuth start/callback flow
+- Profile and repository sync
+- Repository evidence summaries based on authored commits and authored/merged pull requests
+- Aggregated GitHub evidence snapshot for portfolio display
 
 ### Credential workflow
 - Submit credential requests for review
-- Admin / issuer review queue
-- Approve or reject requested evidence
-- Issue verifiable credentials after review
+- Review requests from an issuer/admin queue
+- Approve or reject requests
+- Issue credentials after review
+
+### Verification
+- Public recruiter-facing verification page
+- Verification summary based on:
+  - signature validity
+  - issuer identity
+  - credential status
+  - expiry state
+- Registry controls for:
+  - `active`
+  - `suspended`
+  - `revoked`
 
 ### Supported credential types
 - `GitHubAccountOwnershipCredential`
 - `GitHubContributionCredential`
 - `PortfolioAchievementCredential`
 
-### Recruiter verification
-- Public portfolio page
-- Recruiter-facing verification page
-- Credential trust decision based on:
-  - signature validity
-  - issuer identity
-  - registry status
-  - expiry
-- Credential status controls:
-  - `active`
-  - `suspended`
-  - `revoked`
+## Architecture
 
----
-
-## 3. Intended Use
-
-This project is intended for:
-- personal portfolio demonstration
-- MVP simulation
-- academic / presentation demo
-- DID / VC based portfolio concept validation
-
-This project is **not intended to be a production-ready service**.
-
-It is designed to be:
-- easy to run locally
-- easy to explain during a demo
-- complete enough to show the end-to-end flow
-
----
-
-## 4. System Overview
-
-The system is organized as a monorepo with three main parts.
-
-### Frontend (`apps/web`)
-React + Vite frontend that provides:
-- portfolio dashboard
-- public portfolio page
-- recruiter verification page
-- legacy RBAC demo routes
-
-### Backend (`apps/api`)
-Express backend that provides:
-- portfolio data APIs
-- GitHub OAuth and sync APIs
-- credential request / review APIs
-- credential issuance APIs
-- recruiter verification APIs
-- legacy issuer / wallet / verifier flows
-
-### Shared package (`packages/shared`)
-Shared logic for:
-- DID helpers
-- JOSE / JWT VC handling
-- VC schemas and types
-- RBAC and validation helpers
-
----
-
-## 5. System Architecture
-
-### Core stack
-- **Frontend**: React, Vite
+### Stack
+- **Frontend**: React, Vite, TypeScript
 - **Backend**: Express, Node.js, TypeScript
 - **Database**: SQLite
-- **Credential format**: JWT-based Verifiable Credential
+- **Credential format**: JWT-based Verifiable Credentials
 - **DID method**: `did:jwk`
 
-### Internal flow
-1. Developer edits portfolio information
-2. Developer connects GitHub and syncs evidence
-3. Developer submits a credential request
-4. Issuer / admin reviews the request
+### High-level flow
+1. A developer edits portfolio content
+2. GitHub evidence is connected and synced
+3. A credential request is submitted
+4. An issuer/admin reviews the request
 5. A credential is issued if approved
-6. Recruiter opens a public portfolio or verification link
-7. Recruiter checks signature, status, issuer, and expiry
+6. A recruiter opens the public portfolio or verification page
+7. The recruiter verifies signature, status, issuer, and expiry
 
----
-
-## 6. Repository Structure
+## Repository structure
 
 ```text
 apps/
-  api/   Express API for portfolio, GitHub sync, credential review, issuance, verification
-  web/   React frontend for dashboard, public portfolio, recruiter verification, legacy tools
+  api/      Express API for portfolio, GitHub sync, review, issuance, and verification
+  web/      React frontend for dashboard, public portfolio, verification, and legacy tools
 packages/
-  shared/ Shared DID, VC, JOSE, schema, RBAC, and validation helpers
+  shared/   Shared DID, JOSE, VC schema, RBAC, and validation logic
 docs/
   architecture.md
   final-submission-checklist.md
@@ -143,9 +88,35 @@ docs/
   threat-model.md
 ```
 
----
+## Components
 
-## 7. Local Run
+### `apps/web`
+Frontend application that provides:
+- portfolio dashboard
+- public portfolio page
+- recruiter verification page
+- legacy RBAC demo routes
+
+### `apps/api`
+Backend service that provides:
+- portfolio CRUD APIs
+- GitHub OAuth and sync APIs
+- credential request/review APIs
+- credential issuance APIs
+- verification APIs
+- legacy issuer/wallet/verifier APIs
+
+### `packages/shared`
+Shared library containing:
+- DID helpers
+- JOSE / JWT VC helpers
+- shared schemas and types
+- RBAC helpers
+- validation utilities
+
+## Local development
+
+### Run locally
 
 ```bash
 cd C:\Sjw_dev\Coding\did-vc-rbac-mvp
@@ -155,13 +126,11 @@ npm run seed
 npm run dev
 ```
 
-Default local endpoints:
+Default endpoints:
 - Web: <http://localhost:5173>
 - API: <http://localhost:3001>
 
----
-
-## 8. Environment Variables
+### Environment variables
 
 Minimal local configuration:
 
@@ -176,11 +145,9 @@ GITHUB_CLIENT_SECRET=your_github_oauth_app_client_secret
 GITHUB_CALLBACK_URL=http://localhost:5173/github/callback
 ```
 
-If GitHub OAuth is not configured, the application can still be demonstrated locally using seeded demo data.
+If GitHub OAuth is not configured, the seeded local data can still be used to demonstrate the main portfolio and verification flows.
 
----
-
-## 9. Available Commands
+## Commands
 
 ```bash
 npm install
@@ -193,9 +160,7 @@ npm --workspace @did-vc-rbac/web run test
 npm --workspace @did-vc-rbac/shared run test
 ```
 
----
-
-## 10. Demo Flow
+## Demo path
 
 Recommended demo order:
 1. Dashboard
@@ -204,11 +169,7 @@ Recommended demo order:
 4. Approve and Issue
 5. Recruiter Verification
 
-This order is enough to demonstrate the core value of the project clearly.
-
----
-
-## 11. Documentation
+## Documentation
 
 - Final submission checklist: `docs/final-submission-checklist.md`
 - Setup and demo guide: `docs/setup-and-demo.md`
@@ -217,25 +178,18 @@ This order is enough to demonstrate the core value of the project clearly.
 - Implementation plan: `docs/portfolio-p0-implementation-plan.md`
 - Threat model: `docs/threat-model.md`
 
----
-
-## 12. Current Scope and Limitations
-
-This project is intentionally scoped as a **demo-ready MVP**.
+## Limitations
 
 Current limitations include:
-- GitHub evidence is stronger than a simple repo summary, but it is still not a full historical GitHub event ingestion system
-- Admin review is local-first and not hardened for real multi-user production use
-- SQLite is used for simplicity and local demo convenience
-- UI polish is sufficient for demonstration, but not aimed at production-grade design system completeness
+- GitHub evidence is stronger than a simple repository summary, but it is not a full historical GitHub event ingestion system
+- Admin review is local-first and not designed for hardened multi-user production use
+- SQLite is used for simplicity and local development convenience
+- UI quality is sufficient for MVP demonstration, but not aimed at production-grade design-system completeness
 
----
+## Legacy routes
 
-## 13. Legacy Note
+This repository originally started as a DID/VC-based RBAC demo. Legacy routes are still included for compatibility and reference:
 
-This repository originally started from a DID / VC based RBAC demo.
-
-Legacy routes are still included for compatibility and reference:
 - `/issuer`
 - `/wallet`
 - `/verifier`
@@ -243,18 +197,4 @@ Legacy routes are still included for compatibility and reference:
 - `/audit`
 - `/dev`
 
-In the current version, these routes are separated behind a **Legacy Tools** flow so the main product narrative remains focused on the verifiable developer portfolio.
-
----
-
-## 14. Summary
-
-This project demonstrates a complete personal-project-level MVP for a **verifiable developer portfolio system**.
-
-It is suitable for:
-- project presentation
-- portfolio demonstration
-- MVP simulation
-- DID / VC concept showcase
-
-It is not a production SaaS product, but it is complete enough to clearly demonstrate the problem, the proposed solution, and the end-to-end user flow.
+In the current version, these routes are intentionally separated behind a `Legacy Tools` flow so the main product narrative remains focused on the portfolio system.
