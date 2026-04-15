@@ -102,7 +102,7 @@ async function exchangeGitHubCodeForToken(config: any, code: string) {
   };
 }
 
-async function fetchRepoContributionSignals(apiBase: string, accessToken: string, repo: any) {
+async function fetchRepoContributionSignals(apiBase: string, accessToken: string, repo: any, githubLogin: string) {
   const owner = repo.owner?.login;
   const repoName = repo.name;
   if (!owner || !repoName) {
@@ -117,34 +117,48 @@ async function fetchRepoContributionSignals(apiBase: string, accessToken: string
   }
 
   let commitCount = Math.max(1, Number(repo.stargazers_count ?? 0) + Number(repo.forks_count ?? 0) + 1);
-  let mergedPrCount = repo.owner?.login === owner ? 0 : 1;
-  let pullRequestCount = mergedPrCount;
+  let mergedPrCount = 0;
+  let pullRequestCount = 0;
   let contributorCount = 1;
   const proofPoints: string[] = [];
   let confidence = "heuristic";
 
   try {
     const pulls = await githubRequest<any[]>(`${apiBase}/repos/${owner}/${repoName}/pulls?state=closed&per_page=50`, accessToken);
-    pullRequestCount = pulls.length;
-    mergedPrCount = pulls.filter((pull) => Boolean(pull.merged_at)).length;
-    if (pullRequestCount) proofPoints.push(`${pullRequestCount} closed PRs inspected`);
-    if (mergedPrCount) proofPoints.push(`${mergedPrCount} merged PRs found`);
-    confidence = "medium";
+    const authoredPulls = pulls.filter((pull) => pull.user?.login === githubLogin);
+    pullRequestCount = authoredPulls.length;
+    mergedPrCount = authoredPulls.filter((pull) => Boolean(pull.merged_at)).length;
+    proofPoints.push(`${pulls.length} closed PRs inspected`);
+    if (pullRequestCount) proofPoints.push(`${pullRequestCount} PRs authored by @${githubLogin}`);
+    if (mergedPrCount) proofPoints.push(`${mergedPrCount} authored PRs merged`);
+    confidence = authoredPulls.length || mergedPrCount ? "medium" : "low";
   } catch {
     proofPoints.push("PR detail unavailable, fell back to repo metadata");
   }
 
   try {
+    const authoredCommits = await githubRequest<any[]>(`${apiBase}/repos/${owner}/${repoName}/commits?author=${encodeURIComponent(githubLogin)}&per_page=100`, accessToken);
+    if (authoredCommits.length) {
+      commitCount = Math.max(commitCount, authoredCommits.length);
+      proofPoints.push(`${authoredCommits.length} commits authored by @${githubLogin}`);
+      confidence = confidence === "medium" ? "high" : "medium";
+    }
+  } catch {
+    proofPoints.push("Commit detail unavailable, used contributor summary estimate");
+  }
+
+  try {
     const contributors = await githubRequest<any[]>(`${apiBase}/repos/${owner}/${repoName}/contributors?per_page=20`, accessToken);
     contributorCount = contributors.length || 1;
-    const matchedContributor = contributors.find((contributor) => contributor.login === owner);
+    const matchedContributor = contributors.find((contributor) => contributor.login === githubLogin);
     if (matchedContributor?.contributions) {
       commitCount = Math.max(commitCount, Number(matchedContributor.contributions));
+      proofPoints.push(`${matchedContributor.contributions} contributions attributed to @${githubLogin} in contributor stats`);
+      confidence = confidence === "high" ? "high" : "medium";
     }
     if (contributorCount) proofPoints.push(`${contributorCount} contributors observed`);
-    confidence = confidence === "medium" ? "high" : "medium";
   } catch {
-    proofPoints.push("Contributor stats unavailable, used public metadata estimate");
+    proofPoints.push("Contributor stats unavailable, used authored-activity estimate");
   }
 
   if (!proofPoints.length) proofPoints.push("Repository metadata synced");
@@ -170,7 +184,7 @@ async function fetchGitHubPortfolioData(config: any, accessToken: string) {
 
   const enrichedTopRepos = [];
   for (const repo of topRepos) {
-    const signals = await fetchRepoContributionSignals(apiBase, accessToken, repo);
+    const signals = await fetchRepoContributionSignals(apiBase, accessToken, repo, String(profile.login));
     const contributionRole = repo.owner?.login === profile.login ? "owner" : "contributor";
     const proofSummary = contributionRole === "owner"
       ? `Owns ${repo.full_name}; ${signals.commitCount} observed contributions, ${signals.mergedPrCount} merged PRs, ${signals.pullRequestCount} inspected closed PRs, and ${signals.contributorCount} observed contributors across the latest sync window.`

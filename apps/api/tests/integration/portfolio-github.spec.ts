@@ -86,14 +86,41 @@ describe("portfolio github flow", () => {
       }
       if (url.includes("/repos/octo-dev/portfolio-service/pulls")) {
         return new Response(JSON.stringify([
-          { id: 11, merged_at: "2026-04-10T00:00:00Z" },
-          { id: 12, merged_at: "2026-04-08T00:00:00Z" },
-          { id: 13, merged_at: null }
+          { id: 11, merged_at: "2026-04-10T00:00:00Z", user: { login: "octo-dev" } },
+          { id: 12, merged_at: "2026-04-08T00:00:00Z", user: { login: "octo-dev" } },
+          { id: 13, merged_at: null, user: { login: "pair-dev" } }
         ]), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (url.includes("/repos/octo-dev/oss-contrib/pulls")) {
         return new Response(JSON.stringify([
-          { id: 21, merged_at: "2026-04-09T00:00:00Z" }
+          { id: 21, merged_at: "2026-04-09T00:00:00Z", user: { login: "octo-dev" } }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (url.includes("/repos/octo-dev/portfolio-service/commits?author=octo-dev")) {
+        return new Response(JSON.stringify([
+          { sha: "c1" },
+          { sha: "c2" },
+          { sha: "c3" },
+          { sha: "c4" },
+          { sha: "c5" },
+          { sha: "c6" },
+          { sha: "c7" },
+          { sha: "c8" },
+          { sha: "c9" },
+          { sha: "c10" },
+          { sha: "c11" },
+          { sha: "c12" },
+          { sha: "c13" },
+          { sha: "c14" }
+        ]), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+      if (url.includes("/repos/octo-dev/oss-contrib/commits?author=octo-dev")) {
+        return new Response(JSON.stringify([
+          { sha: "c21" },
+          { sha: "c22" },
+          { sha: "c23" },
+          { sha: "c24" },
+          { sha: "c25" }
         ]), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       if (url.includes("/repos/octo-dev/portfolio-service/contributors")) {
@@ -200,7 +227,7 @@ describe("portfolio github flow", () => {
       "PortfolioAchievementCredential"
     ]));
     expect(portfolio.body.github.contributionSummary.totalEstimatedCommits).toBeGreaterThanOrEqual(19);
-    expect(portfolio.body.github.contributionSummary.totalInspectedClosedPrs).toBeGreaterThanOrEqual(4);
+    expect(portfolio.body.github.contributionSummary.totalInspectedClosedPrs).toBeGreaterThanOrEqual(3);
     expect(portfolio.body.repositories[0].summary.proofPoints.length).toBeGreaterThan(0);
     expect(String(portfolio.body.repositories[0].summary.proofSummary)).toMatch(/inspected closed PRs/i);
 

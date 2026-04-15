@@ -91,8 +91,14 @@ This repo seeds a local demo portfolio automatically.
 
 ## 6. Suggested talking points
 
+### What changed in the latest MVP pass?
+- GitHub evidence now leans on user-authored commits and user-authored PRs instead of broad repo-level guesses alone.
+- The dashboard, public portfolio, and recruiter verification pages now present a clearer portfolio-first story for demos.
+- Legacy RBAC routes are still available, but they are intentionally separated from the main product narrative.
+
 ### Why not just show a GitHub link?
 Because a GitHub link alone does not give a recruiter a signed, issuer-reviewed claim they can verify independently.
+It also does not clearly separate broad repository popularity from activity actually attributed to the specific developer. This MVP now tries to bias evidence toward authored commits and authored/merged PRs for the connected GitHub user.
 
 Use this one-line pitch in demos:
 > "This product does not just show where I worked — it lets me submit verified evidence as recruiter-checkable credentials."
@@ -122,7 +128,7 @@ Check manually:
 
 ## 8. Known MVP limitations
 
-- GitHub contribution counts are still partly heuristic.
+- GitHub contribution counts are now more user-attributed than before, but they are still a lightweight snapshot rather than a full GitHub event ingestion pipeline.
 - Admin review is local-first, not hardened multi-user auth.
 - SQLite is fine for MVP/demo, but not the final production persistence choice.
 - Legacy RBAC routes still exist in the repo for backward compatibility.

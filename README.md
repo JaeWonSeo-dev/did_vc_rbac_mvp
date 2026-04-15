@@ -21,7 +21,7 @@ The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legac
 - recruiter verification page
 - GitHub OAuth bootstrap endpoints
 - GitHub evidence sync and local persistence
-- richer GitHub evidence modeling with observed contribution counts, merged PR counts, proof points, and sync-window summaries
+- richer GitHub evidence modeling with authored commit counts, authored/merged PR counts, proof points, and sync-window summaries
 - credential request → issuer/admin review → approve/reject workflow
 - three VC types:
   - `GitHubAccountOwnershipCredential`
@@ -31,7 +31,7 @@ The codebase started as a DID/VC RBAC demo. The RBAC pieces still exist as legac
 - admin-side registry controls to mark portfolio credentials as active, suspended, or revoked and immediately reflect that on recruiter verification pages
 
 ### Still intentionally simplified
-- GitHub contribution counts are still MVP-practical and partly heuristic; they are stronger than before, but not yet a full commit graph / PR event ingestion pipeline
+- GitHub contribution counts are now biased toward authored commits and authored/merged PRs for the connected user, but they are still MVP-practical rather than a full event-ingestion pipeline
 - issuer trust and credential status are local SQLite records
 - admin review is intentionally local-first rather than multi-user auth hardened
 - default seed/demo data is local-first for fast review
@@ -108,6 +108,16 @@ npm --workspace @did-vc-rbac/web run test
 - implementation plan: `docs/portfolio-p0-implementation-plan.md`
 - threat model: `docs/threat-model.md`
 
+## Submission-ready pitch
+> Verifiable Developer Portfolio MVP turns GitHub work, curated projects, and non-GitHub achievements into issuer-reviewed credentials that recruiters can inspect and verify through signature, status, and expiry checks.
+
+Short demo order:
+1. Dashboard
+2. Public Portfolio
+3. Request review
+4. Approve and issue
+5. Recruiter verification
+
 ## Current architecture notes
 - **Frontend**: React + Vite, portfolio-first layout, local issuer/admin review panel, legacy RBAC tools behind a collapsed section
 - **Backend**: Express modules for portfolio data, GitHub OAuth/sync, credential requests/review, issuance, verification, plus legacy issuer/wallet/verifier services
@@ -115,7 +125,7 @@ npm --workspace @did-vc-rbac/web run test
 - **VC format**: JWT VC using `did:jwk` for local simplicity
 
 ## Remaining gaps
-- real GitHub activity ingestion for user-specific commits, authored PRs, merged PRs, and starred evidence instead of partial repo-level inference
+- deeper GitHub ingestion beyond the current authored-activity snapshot (pagination, GraphQL/event history, review comments, issue activity, and broader OSS evidence)
 - deeper claim derivation for manual evidence (today it can issue a `PortfolioAchievementCredential`, but issuer review and supporting proof are still local-first)
 - stronger multi-user auth and authorization around issuer/admin review surfaces
 - better visual design and component reuse beyond inline styles
