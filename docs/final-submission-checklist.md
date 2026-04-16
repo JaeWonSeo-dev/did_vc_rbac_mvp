@@ -98,6 +98,7 @@ If OAuth is not configured:
 Before sending repo/demo:
 - [ ] README reflects current product direction
 - [ ] setup/demo guide reflects actual demo flow
+- [ ] demo talk track is rehearsed or ready to reference
 - [ ] final pitch is short and clear
 - [ ] no accidental secrets in committed files
 - [ ] runtime SQLite noise is not mistaken for source changes

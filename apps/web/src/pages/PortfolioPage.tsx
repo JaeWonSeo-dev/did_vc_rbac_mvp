@@ -14,6 +14,29 @@ function summaryItem(label: string, value: any) {
   return <div style={{ color: "#94a3b8" }}><strong style={{ color: "#cbd5e1" }}>{label}:</strong> {String(value)}</div>;
 }
 
+function trustChecklist(data: any) {
+  const githubConnected = Boolean(data?.github?.username);
+  const credentialCount = data?.credentials?.length ?? 0;
+  const activeCredentialCount = (data?.credentials ?? []).filter((credential: any) => credential.status === "active").length;
+  const manualEvidenceCount = data?.achievements?.length ?? 0;
+  const projectCount = data?.projects?.length ?? 0;
+
+  return [
+    {
+      title: "Identity and portfolio owner",
+      detail: githubConnected ? `Connected GitHub account: @${data.github.username}` : "GitHub account not connected in this view."
+    },
+    {
+      title: "Project narrative and supporting evidence",
+      detail: `${projectCount} featured project(s) and ${manualEvidenceCount} non-GitHub achievement(s) are published.`
+    },
+    {
+      title: "Issuer-reviewed credentials",
+      detail: `${credentialCount} credential(s) published, ${activeCredentialCount} currently active in issuer registry.`
+    }
+  ];
+}
+
 export function PortfolioPage() {
   const { slug = "sjw-dev" } = useParams();
   const [data, setData] = useState<any>(null);
@@ -33,6 +56,8 @@ export function PortfolioPage() {
     }
     return [...counts.entries()];
   }, [data]);
+
+  const recruiterChecklist = useMemo(() => trustChecklist(data), [data]);
 
   if (error) return <p style={{ color: "#fca5a5" }}>{error}</p>;
   if (!data) return <p>Loading portfolio…</p>;
@@ -69,6 +94,26 @@ export function PortfolioPage() {
             <div style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase" }}>Non-GitHub evidence</div>
             <div>{achievements.length} achievements</div>
             <div style={{ color: "#94a3b8", fontSize: 13 }}>Awards, completions, certifications, and manual proof</div>
+          </div>
+        </div>
+      </section>
+
+      <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
+        <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+            <div>
+              <h3 style={{ marginTop: 0 }}>Why a recruiter can trust this portfolio</h3>
+              <p style={{ color: "#94a3b8" }}>This portfolio combines identity context, evidence, and issuer-reviewed credentials instead of showing claims alone.</p>
+            </div>
+            <Link to="/">Back to dashboard</Link>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            {recruiterChecklist.map((item) => (
+              <div key={item.title} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+                <div style={{ fontSize: 12, color: "#93c5fd", textTransform: "uppercase" }}>{item.title}</div>
+                <div style={{ marginTop: 8, color: "#e2e8f0" }}>{item.detail}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -172,6 +217,7 @@ export function PortfolioPage() {
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>Verifiable credentials</h3>
         <p style={{ color: "#94a3b8" }}>Each credential can be opened in a recruiter-facing verification page with signature, registry status, and expiry context.</p>
+        {!credentials.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No issued credentials have been published yet.</div> : null}
         <div style={{ display: "grid", gap: 16 }}>
           {credentials.map((credential: any) => {
             const badge = statusBadge(credential.status);

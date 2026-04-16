@@ -173,6 +173,7 @@ Recommended demo order:
 
 - Final submission checklist: `docs/final-submission-checklist.md`
 - Setup and demo guide: `docs/setup-and-demo.md`
+- Demo talk track: `docs/demo-talk-track.md`
 - Architecture notes: `docs/architecture.md`
 - Gap analysis: `docs/portfolio-gap-analysis.md`
 - Implementation plan: `docs/portfolio-p0-implementation-plan.md`

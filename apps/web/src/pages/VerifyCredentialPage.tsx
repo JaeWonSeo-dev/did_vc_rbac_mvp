@@ -11,6 +11,27 @@ function toTitle(value?: string | null) {
   return String(value ?? "").replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 
+function recruiterTakeaways(data: any, decision: { label: string; summary: string }) {
+  return [
+    {
+      title: "Can I trust the issuer signature?",
+      detail: data?.ok ? "Yes. The credential payload verifies against the issuer DID." : "No. Signature verification failed or the issuer record could not be resolved."
+    },
+    {
+      title: "Is the issuer still standing behind it?",
+      detail: data?.status === "active"
+        ? "Yes. The issuer registry currently marks this credential as active."
+        : data?.status === "revoked"
+          ? "No. The issuer registry revoked this credential."
+          : "Not fully. The issuer registry marks this credential as suspended pending review."
+    },
+    {
+      title: "What should a recruiter conclude now?",
+      detail: `${decision.label}: ${decision.summary}`
+    }
+  ];
+}
+
 export function VerifyCredentialPage() {
   const { jti = "demo" } = useParams();
   const [data, setData] = useState<any>(null);
@@ -75,6 +96,8 @@ export function VerifyCredentialPage() {
     return Object.entries(data.summary);
   }, [data]);
 
+  const takeaways = useMemo(() => recruiterTakeaways(data, decision), [data, decision]);
+
   if (error) return <p style={{ color: "#fca5a5" }}>{error}</p>;
   if (!data) return <p>Verifying credential…</p>;
 
@@ -128,6 +151,18 @@ export function VerifyCredentialPage() {
           <li>Portfolio: {data.portfolioSlug ? <Link to={`/portfolio/${data.portfolioSlug}`}>{data.portfolioSlug}</Link> : "n/a"}</li>
           <li>Expiry meaning: {expiryState.summary}</li>
         </ul>
+      </section>
+
+      <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
+        <h3 style={{ marginTop: 0 }}>What a recruiter can conclude</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          {takeaways.map((item) => (
+            <div key={item.title} style={{ padding: 16, borderRadius: 14, background: "#0b1020", border: "1px solid #24324f" }}>
+              <div style={{ color: "#93c5fd", fontSize: 12, textTransform: "uppercase" }}>{item.title}</div>
+              <div style={{ marginTop: 8, color: "#e2e8f0" }}>{item.detail}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
