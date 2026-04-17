@@ -201,6 +201,7 @@ export function PortfolioPage() {
       <section style={{ padding: 24, borderRadius: 20, background: "#111830", border: "1px solid #24324f" }}>
         <h3 style={{ marginTop: 0 }}>Credential requests and issuer decisions</h3>
         <div style={{ display: "grid", gap: 16 }}>
+          {!credentialRequests.length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No credential review requests are visible yet. The intended flow is: gather evidence, submit a request, let an issuer review it, then publish the issued credential here.</div> : null}
           {credentialRequests.map((request: any) => (
             <div key={request.id} style={{ padding: 16, borderRadius: 12, background: "#0b1020", border: "1px solid #24324f" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

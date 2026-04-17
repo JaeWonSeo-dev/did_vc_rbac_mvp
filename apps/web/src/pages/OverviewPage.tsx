@@ -565,6 +565,7 @@ export function OverviewPage() {
         <h3 style={{ marginTop: 0 }}>Issued credentials and registry controls</h3>
         <p style={{ color: "#94a3b8" }}>Admin-side status controls for the recruiter verification page: active, suspended, or revoked.</p>
         <div style={{ display: "grid", gap: 14 }}>
+          {!(portfolio?.credentials ?? []).length ? <div style={{ padding: 16, borderRadius: 16, background: "#0b1020", border: "1px dashed #24324f", color: "#94a3b8" }}>No issued credentials yet. Approve a request or use the issue button above before opening the recruiter verification page.</div> : null}
           {(portfolio?.credentials ?? []).map((credential: any) => {
             const tone = statusTone(credential.status);
             return (
